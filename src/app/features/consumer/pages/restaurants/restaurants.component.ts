@@ -3,13 +3,24 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+// import { TranslateService } from '@ngx-translate/core';
+
+interface Restaurant {
+  id: number;
+  name: string;
+  cuisine: string;
+  rating: number;
+  deliveryTime: number;
+  image: string;
+  deliveryFee: number; // Adicione esta linha
+}
 
 @Component({
   selector: 'app-restaurants',
   templateUrl: './restaurants.component.html',
   styleUrls: ['./restaurants.component.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule, RouterLink,],
+  imports: [CommonModule, IonicModule, FormsModule, RouterLink, ],
   
 })
 export class RestaurantsComponent  implements OnInit {
@@ -21,7 +32,8 @@ export class RestaurantsComponent  implements OnInit {
       cuisine: 'Comida Angolana',
       rating: 4.5,
       deliveryTime: 30,
-      image: 'assets/images/restaurant1.jpg'
+      image: 'assets/images/image.pn',
+      deliveryFee: 5
     },
     {
       id: 2,
@@ -29,7 +41,8 @@ export class RestaurantsComponent  implements OnInit {
       cuisine: 'Pizzaria',
       rating: 4.7,
       deliveryTime: 45,
-      image: 'assets/images/restaurant2.jpg'
+      image: 'assets/images/image.pn',
+      deliveryFee: 5
     },
     {
       id: 3,
@@ -37,7 +50,8 @@ export class RestaurantsComponent  implements OnInit {
       cuisine: 'Hamburguer',
       rating: 4.3,
       deliveryTime: 25,
-      image: 'assets/images/restaurant3.jpg'
+      image: 'assets/images/image.pn',
+      deliveryFee: 5
     },
     {
       id: 4,
@@ -45,7 +59,8 @@ export class RestaurantsComponent  implements OnInit {
       cuisine: 'Japonesa',
       rating: 4.8,
       deliveryTime: 50,
-      image: 'assets/images/restaurant4.jpg'
+      image: 'assets/images/image.pn',
+      deliveryFee: 5
     }
   ];
 
@@ -64,7 +79,12 @@ export class RestaurantsComponent  implements OnInit {
     );
   }
 
-  constructor() { }
+  // constructor(private translate: TranslateService) {
+  //   translate.setDefaultLang('pt');
+  //  }
+  //  changeLanguage(lang: string) {
+  //   this.translate.use(lang);
+  // }
 
   ngOnInit() {}
 
