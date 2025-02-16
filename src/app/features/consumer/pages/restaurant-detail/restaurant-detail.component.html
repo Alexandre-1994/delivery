@@ -1,0 +1,39 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <ion-text color="dark">Detalhes do Restaurante</ion-text>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back" color="dark"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card *ngIf="restaurant">
+    <img [src]="restaurant.image" [alt]="restaurant.name">
+    <ion-card-header>
+      <ion-card-title>{{restaurant.name}}</ion-card-title>
+      <ion-card-subtitle>{{restaurant.cuisine}}</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      <div class="restaurant-info">
+        <span class="rating">
+          <ion-icon name="star" color="warning"></ion-icon>
+          {{restaurant.rating}}
+        </span>
+        <span class="delivery-time">
+          <ion-icon name="time-outline"></ion-icon>
+          {{restaurant.deliveryTime}}min
+        </span>
+        <span class="delivery-fee">
+          <ion-icon name="bicycle-outline"></ion-icon>
+          {{restaurant.deliveryFee | currency:'AOA'}}
+        </span>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
