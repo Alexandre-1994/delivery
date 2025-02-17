@@ -36,5 +36,36 @@ export const routes: Routes = [
           .then(m => m.ProfileComponent)
       }
     ]
+  },
+
+  {
+    path: 'delivery',
+    children: [
+      {
+        path: '',
+        redirectTo: 'available-orders',
+        pathMatch: 'full'
+      },
+      {
+        path: 'available-orders',
+        loadComponent: () => import('./features/delivery/pages/available-orders/available-orders.component')
+          .then(m => m.AvailableOrdersComponent)
+      },
+      {
+        path: 'current-delivery',
+        loadComponent: () => import('./features/delivery/pages/current-delivery/current-delivery.component')
+          .then(m => m.CurrentDeliveryComponent)
+      },
+      {
+        path: 'delivery-history',
+        loadComponent: () => import('./features/delivery/pages/delivery-history/delivery-history.component')
+          .then(m => m.DeliveryHistoryComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/delivery/pages/profile/profile.component')
+          .then(m => m.ProfileComponent)
+      }
+    ]
   }
 ];

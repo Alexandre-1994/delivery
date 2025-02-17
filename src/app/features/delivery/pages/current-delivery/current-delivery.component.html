@@ -1,3 +1,239 @@
-<p>
-  current-delivery works!
-</p>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/delivery/available-orders" color="dark"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <ion-text color="dark">Entrega Atual</ion-text>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Status da Entrega -->
+  <div class="delivery-status">
+    <div class="status-header">
+      <h2>Status da Entrega</h2>
+      <ion-badge color="primary">{{currentDelivery?.status}}</ion-badge>
+    </div>
+    <div class="status-timeline">
+      <div class="timeline-item" [class.active]="isStepActive('accepted')">
+        <ion-icon name="checkmark-circle"></ion-icon>
+        <div class="timeline-content">
+          <h3>Pedido Aceito</h3>
+          <p>{{getStepTime('accepted') | date:'HH:mm'}}</p>
+        </div>
+      </div>
+      <div class="timeline-item" [class.active]="isStepActive('collecting')">
+        <ion-icon name="restaurant"></ion-icon>
+        <div class="timeline-content">
+          <h3>Coletando no Restaurante</h3>
+          <p>{{getStepTime('collecting') | date:'HH:mm'}}</p>
+        </div>
+      </div>
+      <div class="timeline-item" [class.active]="isStepActive('delivering')">
+        <ion-icon name="bicycle"></ion-icon>
+        <div class="timeline-content">
+          <h3>A Caminho</h3>
+          <p>{{getStepTime('delivering') | date:'HH:mm'}}</p>
+        </div>
+      </div>
+      <div class="timeline-item" [class.active]="isStepActive('delivered')">
+        <ion-icon name="checkmark-done-circle"></ion-icon>
+        <div class="timeline-content">
+          <h3>Entregue</h3>
+          <p>{{getStepTime('delivered') | date:'HH:mm'}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalhes do Pedido -->
+  <ion-card class="order-details">
+    <ion-card-header>
+      <ion-card-title>Detalhes do Pedido</ion-card-title>
+      <ion-card-subtitle>#{{currentDelivery?.orderNumber}}</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      <!-- Restaurante -->
+      <div class="location-item">
+        <ion-icon name="restaurant" color="primary"></ion-icon>
+        <div class="location-details">
+          <h3>{{currentDelivery?.restaurantName}}</h3>
+          <p>{{currentDelivery?.restaurantAddress}}</p>
+          <ion-button fill="clear" size="small" (click)="openMap(currentDelivery?.restaurantAddress)">
+            <ion-icon name="navigate" slot="start"></ion-icon>
+            Navegar
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- Cliente -->
+      <div class="location-item">
+        <ion-icon name="location" color="primary"></ion-icon>
+        <div class="location-details">
+          <h3>{{currentDelivery?.customerName}}</h3>
+          <p>{{currentDelivery?.deliveryAddress}}</p>
+          <ion-button fill="clear" size="small" (click)="openMap(currentDelivery?.deliveryAddress)">
+            <ion-icon name="navigate" slot="start"></ion-icon>
+            Navegar
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- Itens do Pedido -->
+      <div class="order-items">
+        <h3>Itens do Pedido</h3>
+        <div class="item" *ngFor="let item of currentDelivery?.items">
+          <span class="quantity">{{item.quantity}}x</span>
+          <span class="name">{{item.name}}</span>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
+<!-- Botões de Ação -->
+<ion-footer>
+  <ion-toolbar>
+    <div class="action-buttons">
+      <!-- Botão principal muda conforme o status -->
+      <ion-button expand="block" (click)="updateDeliveryStatus()" 
+                  [disabled]="currentDelivery?.status === 'delivered'">
+        {{getNextActionText()}}
+      </ion-button>
+      
+      <!-- Botão de Suporte -->
+      <ion-button expand="block" fill="clear" (click)="contactSupport()">
+        <ion-icon name="help-circle-outline" slot="start"></ion-icon>
+        Suporte
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>
+
+<style>
+.delivery-status {
+  padding: 16px;
+  background: white;
+
+  .status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+  }
+}
+
+.status-timeline {
+  .timeline-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    opacity: 0.5;
+
+    &.active {
+      opacity: 1;
+
+      ion-icon {
+        color: var(--ion-color-primary);
+      }
+    }
+
+    ion-icon {
+      font-size: 24px;
+      margin-right: 12px;
+    }
+
+    .timeline-content {
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      p {
+        margin: 4px 0 0;
+        font-size: 14px;
+        color: var(--ion-color-medium);
+      }
+    }
+  }
+}
+
+.order-details {
+  margin: 16px;
+
+  .location-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+
+    ion-icon {
+      font-size: 24px;
+      margin-right: 12px;
+      margin-top: 2px;
+    }
+
+    .location-details {
+      flex: 1;
+
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      p {
+        margin: 4px 0;
+        font-size: 14px;
+        color: var(--ion-color-medium);
+      }
+
+      ion-button {
+        margin: 0;
+        --padding-start: 0;
+      }
+    }
+  }
+}
+
+.order-items {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ion-color-light);
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .item {
+    display: flex;
+    margin-bottom: 8px;
+    font-size: 14px;
+
+    .quantity {
+      color: var(--ion-color-primary);
+      margin-right: 8px;
+      font-weight: 500;
+    }
+  }
+}
+
+.action-buttons {
+  padding: 16px;
+
+  ion-button {
+    margin: 8px 0;
+  }
+}
+</style>

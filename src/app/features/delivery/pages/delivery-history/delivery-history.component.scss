@@ -1,0 +1,84 @@
+.earnings-card {
+    margin: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+    .earnings-summary {
+      .main-earning {
+        text-align: center;
+        margin-bottom: 20px;
+
+        h2 {
+          margin: 0;
+          color: var(--ion-color-medium);
+          font-size: 16px;
+        }
+
+        h1 {
+          margin: 8px 0 0;
+          font-size: 32px;
+          font-weight: 700;
+        }
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+
+        .stat-item {
+          display: flex;
+          align-items: center;
+          
+          ion-icon {
+            font-size: 24px;
+            margin-right: 12px;
+            color: var(--ion-color-primary);
+          }
+
+          .stat-info {
+            display: flex;
+            flex-direction: column;
+
+            span {
+              font-weight: 500;
+            }
+
+            small {
+              color: var(--ion-color-medium);
+              font-size: 12px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ion-item-divider {
+    --background: var(--ion-color-light);
+    --padding-start: 16px;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .no-deliveries {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ion-color-medium);
+
+    ion-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+  }

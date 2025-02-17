@@ -10,7 +10,7 @@
     <ion-title>
       <div class="location-title">
         <ion-text color="dark">Entregar em</ion-text>
-        <ion-text color="dark"><b>Beira, Mocambique</b></ion-text>
+        <ion-text color="dark"><b>Beira, Moçambique</b></ion-text>
       </div>
     </ion-title>
     <ion-buttons slot="end">
@@ -84,7 +84,21 @@
       Ver todos
     </ion-button>
   </div>
-
+  <ion-card class="delivery-card" (click)="goToDelivery()">
+    <div class="card-content">
+      <div class="info">
+        <h2>Quer fazer entregas?</h2>
+        <p>Ganhe dinheiro entregando pedidos na sua cidade</p>
+        <ion-button fill="clear">
+          Começar agora
+          <ion-icon name="arrow-forward" slot="end"></ion-icon>
+        </ion-button>
+      </div>
+      <div class="icon">
+        <ion-icon name="bicycle"></ion-icon>
+      </div>
+    </div>
+  </ion-card>
   <!-- Lista de Restaurantes -->
   <div class="restaurant-grid">
     <ion-card *ngFor="let restaurant of filteredRestaurants" 
@@ -138,6 +152,11 @@
     <ion-tab-button (click)="goToOrders()">
       <ion-icon name="receipt"></ion-icon>
       <ion-label>Pedidos</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button (click)="goToDelivery()">
+      <ion-icon name="bicycle"></ion-icon>
+      <ion-label>Entregas</ion-label>
     </ion-tab-button>
   
     <ion-tab-button (click)="goToProfile()">

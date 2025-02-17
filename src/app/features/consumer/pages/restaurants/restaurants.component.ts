@@ -171,4 +171,7 @@ export class RestaurantsComponent implements OnInit {
   goToHome(): void {
     this.router.navigate(['/consumer/restaurants']);
   }
+  goToDelivery(): void {
+    this.router.navigate(['/delivery/available-orders']);
+  }
 }

@@ -1,3 +1,85 @@
-<p>
-  delivery-history works!
-</p>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <ion-text color="dark">Histórico de Entregas</ion-text>
+    </ion-title>
+  </ion-toolbar>
+
+  <!-- Filtros -->
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="selectedPeriod" (ionChange)="filterDeliveries()">
+      <ion-segment-button value="today">
+        <ion-label>Hoje</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="week">
+        <ion-label>Semana</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="month">
+        <ion-label>Mês</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Resumo de Ganhos -->
+  <ion-card class="earnings-card">
+    <ion-card-content>
+      <div class="earnings-summary">
+        <div class="main-earning">
+          <h2>Ganhos Totais</h2>
+          <ion-text color="primary">
+            <h1>{{getTotalEarnings() | currency:'AOA'}}</h1>
+          </ion-text>
+        </div>
+        <div class="stats">
+          <div class="stat-item">
+            <ion-icon name="bicycle-outline"></ion-icon>
+            <div class="stat-info">
+              <span>{{getTotalDeliveries()}} entregas</span>
+              <small>{{getAverageDeliveryTime()}} min (média)</small>
+            </div>
+          </div>
+          <div class="stat-item">
+            <ion-icon name="map-outline"></ion-icon>
+            <div class="stat-info">
+              <span>{{getTotalDistance()}} km</span>
+              <small>Distância total</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Lista de Entregas -->
+  <div class="delivery-list">
+    <ion-list>
+      <ion-item-group *ngFor="let group of groupedDeliveries | keyvalue">
+        <ion-item-divider sticky>
+          <ion-label>{{group.key}}</ion-label>
+        </ion-item-divider>
+
+        <ion-item *ngFor="let delivery of group.value" detail (click)="showDeliveryDetails(delivery)">
+          <ion-label>
+            <h2>{{delivery.restaurantName}}</h2>
+            <p>{{delivery.customerAddress}}</p>
+            <ion-text color="medium">
+              <p>{{delivery.date | date:'HH:mm'}} • {{delivery.earnings | currency:'AOA'}}</p>
+            </ion-text>
+          </ion-label>
+          <ion-badge slot="end" [color]="delivery.status === 'completed' ? 'success' : 'danger'">
+            {{delivery.status === 'completed' ? 'Concluído' : 'Cancelado'}}
+          </ion-badge>
+        </ion-item>
+      </ion-item-group>
+    </ion-list>
+
+    <!-- Mensagem quando não há entregas -->
+    <div class="no-deliveries" *ngIf="filteredDeliveries.length === 0">
+      <ion-icon name="bicycle-outline"></ion-icon>
+      <h3>Nenhuma entrega no período</h3>
+      <p>As entregas completadas aparecerão aqui</p>
+    </div>
+  </div>
+</ion-content>

@@ -1,88 +1,72 @@
+.status-bar {
+  padding: 16px;
+  background: var(--ion-color-light);
+  transition: all 0.3s ease;
+
+  &.online {
+    background: var(--ion-color-success-light);
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--ion-color-medium);
+  }
+}
 
 .order-card {
   margin: 16px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 
-  .order-header {
+  ion-card-title {
+    font-size: 18px;
+  }
+
+  .order-details {
+    margin: 16px 0;
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+
+      ion-icon {
+        margin-right: 8px;
+        color: var(--ion-color-medium);
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .order-info {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: space-around;
+    margin: 16px 0;
 
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
+    .info-item {
+      display: flex;
+      align-items: center;
+      color: var(--ion-color-medium);
+
+      ion-icon {
+        margin-right: 4px;
+      }
     }
   }
 }
 
-.order-progress {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 20px 0;
-
-  .progress-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    color: var(--ion-color-medium);
-
-    ion-icon {
-      font-size: 24px;
-      margin-bottom: 4px;
-    }
-
-    span {
-      font-size: 12px;
-      text-align: center;
-    }
-
-    &.active {
-      color: var(--ion-color-primary);
-    }
-  }
-
-  .progress-line {
-    flex: 1;
-    height: 2px;
-    background: var(--ion-color-medium);
-    margin: 0 8px;
-    margin-bottom: 20px;
-  }
-}
-
-.order-details {
-  margin: 16px 0;
-
-  .detail-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    color: var(--ion-color-medium);
-
-    ion-icon {
-      margin-right: 8px;
-      font-size: 20px;
-    }
-
-    span {
-      font-size: 14px;
-    }
-  }
-}
-
-.order-actions {
-  display: flex;
-  justify-content: space-around;
-  border-top: 1px solid var(--ion-color-light);
-  padding-top: 12px;
-  margin-top: 12px;
-}
-
-.no-orders {
+.no-orders, .offline-message {
   text-align: center;
   padding: 40px 20px;
   color: var(--ion-color-medium);
@@ -107,9 +91,4 @@
     max-width: 200px;
     margin: 0 auto;
   }
-}
-
-ion-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
 }
