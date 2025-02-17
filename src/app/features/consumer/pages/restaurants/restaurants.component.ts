@@ -73,7 +73,7 @@ export class RestaurantsComponent implements OnInit {
       rating: 4.5,
       deliveryTime: 30,
       deliveryFee: 1500,
-      image: 'https://placehold.co/300x200',
+      image: 'https://picsum.photos/300/200?food  ',
       isOpen: true,
       minOrder: 3000,
       categories: ['tradicional', 'Mocambiquena']
@@ -85,7 +85,7 @@ export class RestaurantsComponent implements OnInit {
       rating: 4.7,
       deliveryTime: 45,
       deliveryFee: 2000,
-      image: 'https://placehold.co/300x200',
+      image: 'https://picsum.photos/300/200  ',
       isOpen: true,
       minOrder: 4000,
       categories: ['pizza', 'italiana']
@@ -97,7 +97,7 @@ export class RestaurantsComponent implements OnInit {
       rating: 4.3,
       deliveryTime: 25,
       deliveryFee: 1000,
-      image: 'https://placehold.co/300x200',
+      image: 'https://loremflickr.com/300/200/burguer',
       isOpen: true,
       minOrder: 2500,
       categories: ['fast-food', 'hamburger']
@@ -109,7 +109,7 @@ export class RestaurantsComponent implements OnInit {
       rating: 4.8,
       deliveryTime: 50,
       deliveryFee: 2500,
-      image: 'https://placehold.co/300x200',
+      image: 'https://loremflickr.com/300/200/food ',
       isOpen: true,
       minOrder: 5000,
       categories: ['japonesa', 'sushi']

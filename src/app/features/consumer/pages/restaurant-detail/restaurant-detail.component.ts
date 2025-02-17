@@ -67,7 +67,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       name: 'Mufete Tradicional',
       description: 'Peixe grelhado com feijão de óleo de palma, banana, batata doce e faroja',
       price: 5000,
-      image: 'https://dummyimage.com/80x80/cccccc/000000 ',
+      image: 'https://loremflickr.com/80/80/food',
       category: 'main',
       available: true,
       popular: true
@@ -77,7 +77,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       name: 'Calulu',
       description: 'Peixe seco com legumes, quiabo e óleo de palma',
       price: 4500,
-      image: 'https://dummyimage.com/80x80/cccccc/000000',
+      image: 'https://loremflickr.com/80/80/food',
       category: 'main',
       available: true,
       spicy: true
@@ -87,7 +87,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       name: 'Moamba de Galinha',
       description: 'Galinha com molho de gimboa e funge',
       price: 4000,
-      image: 'https://dummyimage.com/80x80/cccccc/000000',
+      image: 'https://loremflickr.com/80/80/food',
       category: 'main',
       available: true
     },
@@ -96,7 +96,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       name: 'Sumo de Múcua',
       description: 'Bebida tradicional Mocambiquena',
       price: 1500,
-      image: 'https://dummyimage.com/80x80/cccccc/000000',
+      image: 'https://loremflickr.com/80/80/drink',
       category: 'drinks',
       available: true
     }
@@ -134,7 +134,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       rating: 4.5,
       deliveryTime: 30,
       deliveryFee: 1500,
-      image: 'https://via.placeholder.com/400x200',
+      image: 'https://picsum.photos/400/200?food',
       minOrder: 3000,
       isOpen: true,
       categories: ['tradicional', 'Mocambiquena']
