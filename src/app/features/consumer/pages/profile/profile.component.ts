@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { IonNav } from '@ionic/angular/standalone';
 
 // Interfaces
 interface Address {
@@ -45,7 +46,8 @@ interface Order {
   imports: [
     CommonModule,
     IonicModule,
-    FormsModule
+    FormsModule,
+    IonNav
   ]
 })
 export class ProfileComponent implements OnInit {
