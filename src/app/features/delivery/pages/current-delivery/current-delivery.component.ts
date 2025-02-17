@@ -1,10 +1,9 @@
-import { Component, OnInit, ViewChild, ElementRef, OnDestroy  } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Geolocation } from '@capacitor/geolocation';
 import { interval, Subscription } from 'rxjs';
-// import { MapsLoaderService } from '../../core/services/maps-loader.service';
 import { MapsLoaderService } from 'src/app/core/services/maps-loader.service';
 
 declare var google: any;
@@ -43,10 +42,8 @@ interface CurrentDelivery {
   standalone: true,
   imports: [CommonModule, IonicModule]
 })
-export class CurrentDeliveryComponent implements OnInit {
-
-  @ViewChild('map')
-  mapElement!: ElementRef;
+export class CurrentDeliveryComponent implements OnInit, OnDestroy {
+  @ViewChild('map') mapElement!: ElementRef;
   
   map: any;
   directionsService: any;
@@ -54,33 +51,36 @@ export class CurrentDeliveryComponent implements OnInit {
   currentPosition: any;
   estimatedTime: number = 0;
   remainingDistance: number = 0;
-  locationWatchId!: string;
-  updateSubscription!: Subscription;
-
+  locationWatchId: string | null = null;
+  updateSubscription: Subscription | null = null;
+  isDetailsOpen: boolean = false;
+  modalBreakpoint: number = 0.25;
   currentDelivery: CurrentDelivery | null = null;
 
-  constructor(private router: Router, private mapsLoader: MapsLoaderService) {}
-
-  // async ngOnInit() {
-  //   this.loadMockDelivery();
-  //   await this.initializeMap();
-  //   this.startTracking();
-  // }
+  constructor(
+    private router: Router,
+    private mapsLoader: MapsLoaderService
+  ) {}
 
   async ngOnInit() {
     try {
       this.loadMockDelivery();
-      await this.mapsLoader.loadGoogleMaps(); // Carrega o Google Maps
+      await this.mapsLoader.loadGoogleMaps();
       await this.initializeMap();
-      this.startTracking();
+      await this.startTracking();
     } catch (error) {
       console.error('Erro na inicialização:', error);
     }
   }
+
   ngOnDestroy() {
     this.stopTracking();
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
   }
 
+  // Métodos de dados mockados
   loadMockDelivery() {
     this.currentDelivery = {
       id: '1',
@@ -100,6 +100,52 @@ export class CurrentDeliveryComponent implements OnInit {
     };
   }
 
+  // Métodos de controle do modal
+  closeDetails() {
+    const modal = document.querySelector('ion-modal');
+    if (modal) {
+      modal.setCurrentBreakpoint(0.25);
+    }
+  }
+
+  // Métodos de status e UI
+  getStatusIcon(): string {
+    if (!this.currentDelivery) return 'ellipse';
+
+    switch (this.currentDelivery.status) {
+      case 'accepted': return 'checkmark-circle';
+      case 'collecting': return 'restaurant';
+      case 'delivering': return 'bicycle';
+      case 'delivered': return 'checkmark-done-circle';
+      default: return 'ellipse';
+    }
+  }
+
+  getStatusColor(): string {
+    if (!this.currentDelivery) return 'medium';
+
+    switch (this.currentDelivery.status) {
+      case 'accepted': return 'warning';
+      case 'collecting': return 'primary';
+      case 'delivering': return 'tertiary';
+      case 'delivered': return 'success';
+      default: return 'medium';
+    }
+  }
+
+  formatStatus(status: DeliveryStatus | undefined): string {
+    if (!status) return '';
+    
+    const statusMap: Record<DeliveryStatus, string> = {
+      'accepted': 'Pedido Aceito',
+      'collecting': 'Coletando no Restaurante',
+      'delivering': 'Em Rota de Entrega',
+      'delivered': 'Entregue'
+    };
+
+    return statusMap[status];
+  }
+
   isStepActive(step: DeliveryStatus): boolean {
     const statusOrder: DeliveryStatus[] = ['accepted', 'collecting', 'delivering', 'delivered'];
     const currentIndex = statusOrder.indexOf(this.currentDelivery?.status || 'accepted');
@@ -113,19 +159,15 @@ export class CurrentDeliveryComponent implements OnInit {
 
   getNextActionText(): string {
     switch(this.currentDelivery?.status) {
-      case 'accepted':
-        return 'Cheguei ao Restaurante';
-      case 'collecting':
-        return 'Iniciar Entrega';
-      case 'delivering':
-        return 'Confirmar Entrega';
-      case 'delivered':
-        return 'Entrega Concluída';
-      default:
-        return 'Próximo Passo';
+      case 'accepted': return 'Cheguei ao Restaurante';
+      case 'collecting': return 'Iniciar Entrega';
+      case 'delivering': return 'Confirmar Entrega';
+      case 'delivered': return 'Entrega Concluída';
+      default: return 'Próximo Passo';
     }
   }
 
+  // Métodos de ação
   async updateDeliveryStatus() {
     if (!this.currentDelivery) return;
 
@@ -158,9 +200,9 @@ export class CurrentDeliveryComponent implements OnInit {
     console.log('Contactando suporte...');
   }
 
+  // Métodos de mapa e localização
   async initializeMap() {
     try {
-      // Obter localização atual
       const coordinates = await Geolocation.getCurrentPosition();
       
       const mapOptions = {
@@ -170,20 +212,16 @@ export class CurrentDeliveryComponent implements OnInit {
           lng: coordinates.coords.longitude
         },
         disableDefaultUI: true,
-        styles: [/* Seu estilo de mapa personalizado */]
+        styles: []
       };
 
-      // Criar mapa
       this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
-      
-      // Inicializar serviços de direção
       this.directionsService = new google.maps.DirectionsService();
       this.directionsRenderer = new google.maps.DirectionsRenderer({
         map: this.map,
-        suppressMarkers: true // Usaremos marcadores personalizados
+        suppressMarkers: true
       });
 
-      // Atualizar rota inicial
       await this.updateRoute();
     } catch (error) {
       console.error('Erro ao inicializar mapa:', error);
@@ -192,7 +230,6 @@ export class CurrentDeliveryComponent implements OnInit {
 
   async startTracking() {
     try {
-      // Iniciar watch position
       this.locationWatchId = await Geolocation.watchPosition({
         enableHighAccuracy: true,
         timeout: 1000,
@@ -202,11 +239,9 @@ export class CurrentDeliveryComponent implements OnInit {
           console.error('Erro ao obter localização:', err);
           return;
         }
-        
         this.updateDeliveryLocation(position);
       });
 
-      // Atualizar rota a cada 30 segundos
       this.updateSubscription = interval(30000).subscribe(() => {
         this.updateRoute();
       });
@@ -225,12 +260,10 @@ export class CurrentDeliveryComponent implements OnInit {
   }
 
   async updateDeliveryLocation(position: any) {
-    const newPosition = {
+    this.currentPosition = {
       lat: position.coords.latitude,
       lng: position.coords.longitude
     };
-
-    this.currentPosition = newPosition;
     await this.updateRoute();
   }
 
@@ -251,7 +284,6 @@ export class CurrentDeliveryComponent implements OnInit {
       const result = await this.directionsService.route(request);
       this.directionsRenderer.setDirections(result);
 
-      // Atualizar tempo e distância estimados
       const route = result.routes[0].legs[0];
       this.estimatedTime = Math.round(route.duration.value / 60);
       this.remainingDistance = parseFloat((route.distance.value / 1000).toFixed(1));
@@ -260,7 +292,6 @@ export class CurrentDeliveryComponent implements OnInit {
     }
   }
 
-  // Método para criar marcadores personalizados
   createCustomMarker(position: any, icon: string, title: string) {
     return new google.maps.Marker({
       position: position,

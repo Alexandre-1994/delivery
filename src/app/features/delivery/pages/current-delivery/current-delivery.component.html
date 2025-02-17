@@ -8,49 +8,49 @@
     </ion-title>
   </ion-toolbar>
 </ion-header>
-<div class="tracking-map">
-  <ion-card>
-    <div class="map-container">
-      <div #map id="map" class="map"></div>
-      <div class="delivery-info">
-        <div class="eta">
-          <ion-icon name="time-outline"></ion-icon>
-          <span>{{estimatedTime}} min</span>
-        </div>
-        <div class="distance">
-          <ion-icon name="map-outline"></ion-icon>
-          <span>{{remainingDistance}} km</span>
-        </div>
-      </div>
-    </div>
-    <ion-card-content>
-      <div class="route-points">
-        <!-- Ponto de Coleta -->
-        <div class="point">
-          <div class="icon pickup">
-            <ion-icon name="restaurant"></ion-icon>
+ <div class="tracking-map">
+    <ion-card>
+      <div class="map-container">
+        <div #map id="map" class="map"></div>
+        <div class="delivery-info">
+          <div class="eta">
+            <ion-icon name="time-outline"></ion-icon>
+            <span>{{estimatedTime}} min</span>
           </div>
-          <div class="details">
-            <strong>{{currentDelivery?.restaurantName}}</strong>
-            <p>{{currentDelivery?.restaurantAddress}}</p>
-          </div>
-        </div>
-        <!-- Linha conectora -->
-        <div class="connector"></div>
-        <!-- Ponto de Entrega -->
-        <div class="point">
-          <div class="icon delivery">
-            <ion-icon name="location"></ion-icon>
-          </div>
-          <div class="details">
-            <strong>{{currentDelivery?.customerName}}</strong>
-            <p>{{currentDelivery?.deliveryAddress}}</p>
+          <div class="distance">
+            <ion-icon name="map-outline"></ion-icon>
+            <span>{{remainingDistance}} km</span>
           </div>
         </div>
       </div>
-    </ion-card-content>
-  </ion-card>
-</div>
+      <ion-card-content>
+        <div class="route-points">
+          <!-- Ponto de Coleta -->
+          <div class="point">
+            <div class="icon pickup">
+              <ion-icon name="restaurant"></ion-icon>
+            </div>
+            <div class="details">
+              <strong>{{currentDelivery?.restaurantName}}</strong>
+              <p>{{currentDelivery?.restaurantAddress}}</p>
+            </div>
+          </div>
+          <!-- Linha conectora -->
+          <div class="connector"></div>
+          <!-- Ponto de Entrega -->
+          <div class="point">
+            <div class="icon delivery">
+              <ion-icon name="location"></ion-icon>
+            </div>
+            <div class="details">
+              <strong>{{currentDelivery?.customerName}}</strong>
+              <p>{{currentDelivery?.deliveryAddress}}</p>
+            </div>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
 <ion-content>
  
   <!-- Status da Entrega -->
