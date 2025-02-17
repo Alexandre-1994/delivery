@@ -1,39 +1,261 @@
-<ion-header>
+<!-- restaurant-detail.component.html -->
+<ion-header class="ion-no-border">
   <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/consumer/restaurants" color="dark"></ion-back-button>
+    </ion-buttons>
     <ion-title>
-      <ion-text color="dark">Detalhes do Restaurante</ion-text>
+      <ion-text color="dark">{{ restaurant?.name }}</ion-text>
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="goBack()">
-        <ion-icon name="arrow-back" color="dark"></ion-icon>
+      <ion-button routerLink="/consumer/cart">
+        <ion-icon name="cart-outline" color="dark"></ion-icon>
+        <ion-badge color="danger" *ngIf="cartItems > 0">{{cartItems}}</ion-badge>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <ion-card *ngIf="restaurant">
-    <img [src]="restaurant.image" [alt]="restaurant.name">
-    <ion-card-header>
-      <ion-card-title>{{restaurant.name}}</ion-card-title>
-      <ion-card-subtitle>{{restaurant.cuisine}}</ion-card-subtitle>
-    </ion-card-header>
-
-    <ion-card-content>
-      <div class="restaurant-info">
-        <span class="rating">
+  <!-- Banner e Informações do Restaurante -->
+  <div class="restaurant-banner">
+    <img [src]="restaurant?.image" [alt]="restaurant?.name">
+    <div class="restaurant-info">
+      <div class="main-info">
+        <h1>{{ restaurant?.name }}</h1>
+        <ion-badge color="success" *ngIf="restaurant?.isOpen">Aberto</ion-badge>
+        <ion-badge color="medium" *ngIf="!restaurant?.isOpen">Fechado</ion-badge>
+      </div>
+      <p class="cuisine">{{ restaurant?.cuisine }}</p>
+      <div class="stats">
+        <span class="stat-item">
           <ion-icon name="star" color="warning"></ion-icon>
-          {{restaurant.rating}}
+          {{ restaurant?.rating }}
         </span>
-        <span class="delivery-time">
+        <span class="stat-divider">•</span>
+        <span class="stat-item">
           <ion-icon name="time-outline"></ion-icon>
-          {{restaurant.deliveryTime}}min
+          {{ restaurant?.deliveryTime }} min
         </span>
-        <span class="delivery-fee">
+        <span class="stat-divider">•</span>
+        <span class="stat-item">
           <ion-icon name="bicycle-outline"></ion-icon>
-          {{restaurant.deliveryFee | currency:'AOA'}}
+          {{ restaurant?.deliveryFee | currency:'MZN' }}
         </span>
       </div>
-    </ion-card-content>
-  </ion-card>
+      <div class="min-order">
+        Pedido mínimo: {{ restaurant?.minOrder | currency:'MZN' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Categories -->
+  <ion-segment [(ngModel)]="selectedCategory" 
+               (ionChange)="onCategoryChange($event)" 
+               mode="md" 
+               scrollable
+               class="category-segment">
+    <ion-segment-button *ngFor="let cat of categories" [value]="cat.id">
+      <ion-label>{{ cat.name }}</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Menu Items -->
+  <div class="menu-items">
+    <ion-list>
+      <ion-item *ngFor="let item of filteredMenuItems" class="menu-item" [disabled]="!item.available">
+        <ion-thumbnail slot="start">
+          <img [src]="item.image" [alt]="item.name">
+        </ion-thumbnail>
+        <ion-label>
+          <div class="item-header">
+            <h2>{{ item.name }}</h2>
+            <div class="item-badges">
+              <ion-badge color="warning" *ngIf="item.popular">Popular</ion-badge>
+              <ion-badge color="danger" *ngIf="item.spicy">Picante</ion-badge>
+            </div>
+          </div>
+          <p>{{ item.description }}</p>
+          <div class="item-footer">
+            <ion-text color="primary" class="price">
+              {{ formatPrice(item.price) }}
+            </ion-text>
+            <ion-button (click)="addToCart(item)" 
+                       fill="clear"
+                       [disabled]="!restaurant?.isOpen || !item.available">
+              <ion-icon name="add-circle-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+    <!-- Mensagem quando não há itens na categoria -->
+    <div class="no-items" *ngIf="filteredMenuItems.length === 0">
+      <ion-icon name="restaurant-outline"></ion-icon>
+      <p>Nenhum item disponível nesta categoria</p>
+    </div>
+  </div>
 </ion-content>
+
+<!-- Estilos SCSS -->
+<style>
+.restaurant-banner {
+  position: relative;
+  
+  img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .restaurant-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: white;
+
+    .main-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+      }
+    }
+
+    .cuisine {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 14px;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .stat-divider {
+        opacity: 0.7;
+      }
+    }
+
+    .min-order {
+      margin-top: 8px;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  }
+}
+
+.category-segment {
+  padding: 10px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+
+  ion-segment-button {
+    --color: var(--ion-color-medium);
+    --color-checked: var(--ion-color-primary);
+    --indicator-color: var(--ion-color-primary);
+    min-width: 120px;
+  }
+}
+
+.menu-items {
+  .menu-item {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+
+    ion-thumbnail {
+      --size: 80px;
+      margin-right: 16px;
+
+      img {
+        border-radius: 8px;
+        object-fit: cover;
+      }
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+
+      h2 {
+        font-weight: 600;
+        font-size: 16px;
+        margin: 0;
+      }
+
+      .item-badges {
+        display: flex;
+        gap: 4px;
+      }
+    }
+
+    p {
+      color: var(--ion-color-medium);
+      font-size: 14px;
+      margin: 4px 0;
+    }
+
+    .item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+
+      .price {
+        font-weight: 600;
+        font-size: 16px;
+      }
+    }
+
+    &.item-disabled {
+      opacity: 0.5;
+    }
+  }
+}
+
+.no-items {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ion-color-medium);
+
+  ion-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 16px;
+  }
+}
+
+ion-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+</style>

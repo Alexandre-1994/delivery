@@ -2,17 +2,37 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-// import { TranslateService } from '@ngx-translate/core';
+import { RouterLink, Router } from '@angular/router';
+import { register } from 'swiper/element/bundle';
+import 'swiper/element/bundle';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
+register(); 
+
+// Interface mais completa para o restaurante
 interface Restaurant {
   id: number;
   name: string;
   cuisine: string;
   rating: number;
   deliveryTime: number;
+  deliveryFee: number;
   image: string;
-  deliveryFee: number; // Adicione esta linha
+  isOpen?: boolean;
+  minOrder?: number;
+  categories?: string[];
+}
+
+// Interface para o Swiper Config
+interface SwiperConfig {
+  slidesPerView: number;
+  spaceBetween: number;
+  centeredSlides: boolean;
+  loop: boolean;
+  autoplay: {
+    delay: number;
+  };
 }
 
 @Component({
@@ -20,20 +40,43 @@ interface Restaurant {
   templateUrl: './restaurants.component.html',
   styleUrls: ['./restaurants.component.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule, RouterLink, ],
-  
+  imports: [
+    CommonModule, 
+    IonicModule, 
+    FormsModule, 
+    RouterModule,
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class RestaurantsComponent  implements OnInit {
+export class RestaurantsComponent implements OnInit {
   searchTerm: string = '';
-  restaurants = [
+  cartItems: number = 0;
+  selectedCategory: string = 'todos';
+  
+  // Tipagem forte para o swiperConfig
+  swiperConfig: SwiperConfig = {
+    slidesPerView: 1.1,
+    spaceBetween: 10,
+    centeredSlides: true,
+    loop: true,
+    autoplay: {
+      delay: 3000
+    }
+  };
+
+  // Array tipado com a interface Restaurant
+  restaurants: Restaurant[] = [
     {
       id: 1,
-      name: 'Restaurante Típico',
-      cuisine: 'Comida Angolana',
+      name: 'Restaurante Tradicional',
+      cuisine: 'Comida Mocambiquena',
       rating: 4.5,
       deliveryTime: 30,
-      image: 'assets/images/image.pn',
-      deliveryFee: 5
+      deliveryFee: 1500,
+      image: 'https://placehold.co/300x200',
+      isOpen: true,
+      minOrder: 3000,
+      categories: ['tradicional', 'Mocambiquena']
     },
     {
       id: 2,
@@ -41,17 +84,23 @@ export class RestaurantsComponent  implements OnInit {
       cuisine: 'Pizzaria',
       rating: 4.7,
       deliveryTime: 45,
-      image: 'assets/images/image.pn',
-      deliveryFee: 5
+      deliveryFee: 2000,
+      image: 'https://placehold.co/300x200',
+      isOpen: true,
+      minOrder: 4000,
+      categories: ['pizza', 'italiana']
     },
     {
       id: 3,
       name: 'Burguer House',
-      cuisine: 'Hamburguer',
+      cuisine: 'Fast Food',
       rating: 4.3,
       deliveryTime: 25,
-      image: 'assets/images/image.pn',
-      deliveryFee: 5
+      deliveryFee: 1000,
+      image: 'https://placehold.co/300x200',
+      isOpen: true,
+      minOrder: 2500,
+      categories: ['fast-food', 'hamburger']
     },
     {
       id: 4,
@@ -59,33 +108,67 @@ export class RestaurantsComponent  implements OnInit {
       cuisine: 'Japonesa',
       rating: 4.8,
       deliveryTime: 50,
-      image: 'assets/images/image.pn',
-      deliveryFee: 5
+      deliveryFee: 2500,
+      image: 'https://placehold.co/300x200',
+      isOpen: true,
+      minOrder: 5000,
+      categories: ['japonesa', 'sushi']
     }
   ];
 
-  filteredRestaurants = [...this.restaurants];
+  // Restaurantes filtrados
+  filteredRestaurants: Restaurant[] = this.restaurants;
 
-  filterRestaurants() {
-    if (!this.searchTerm) {
-      this.filteredRestaurants = [...this.restaurants];
-      return;
-    }
+  constructor(private router: Router) {}
 
-    const term = this.searchTerm.toLowerCase();
-    this.filteredRestaurants = this.restaurants.filter(restaurant => 
-      restaurant.name.toLowerCase().includes(term) || 
-      restaurant.cuisine.toLowerCase().includes(term)
-    );
+  ngOnInit(): void {
+    // Inicializa os restaurantes filtrados
+    this.filterRestaurants();
   }
 
-  // constructor(private translate: TranslateService) {
-  //   translate.setDefaultLang('pt');
-  //  }
-  //  changeLanguage(lang: string) {
-  //   this.translate.use(lang);
-  // }
+  // Método de busca melhorado
+  search(): void {
+    this.filterRestaurants();
+  }
 
-  ngOnInit() {}
+  // Método para filtrar restaurantes
+  filterRestaurants(): void {
+    this.filteredRestaurants = this.restaurants.filter(restaurant => {
+      const matchesSearch = !this.searchTerm || 
+        restaurant.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        restaurant.cuisine.toLowerCase().includes(this.searchTerm.toLowerCase());
 
+      const matchesCategory = this.selectedCategory === 'todos' || 
+        restaurant.categories?.includes(this.selectedCategory);
+
+      return matchesSearch && matchesCategory;
+    });
+  }
+
+  // Método para alterar categoria
+  categoryChanged(event: any): void {
+    this.selectedCategory = event.detail.value;
+    this.filterRestaurants();
+  }
+
+  // Métodos de navegação
+  goToRestaurant(restaurant: Restaurant): void {
+    this.router.navigate(['/consumer/restaurant', restaurant.id]);
+  }
+
+  goToCart(): void {
+    this.router.navigate(['/consumer/cart']);
+  }
+
+  goToProfile(): void {
+    this.router.navigate(['/consumer/profile']);
+  }
+
+  goToOrders(): void {
+    this.router.navigate(['/consumer/orders']);
+  }
+
+  goToHome(): void {
+    this.router.navigate(['/consumer/restaurants']);
+  }
 }

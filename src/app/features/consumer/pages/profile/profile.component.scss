@@ -1,0 +1,83 @@
+
+.profile-header {
+  padding: 24px;
+  text-align: center;
+  background: var(--ion-color-light);
+
+  .profile-image {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 16px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--ion-color-primary);
+    }
+
+    .change-photo {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+      --padding-start: 8px;
+      --padding-end: 8px;
+      height: 32px;
+      
+      ion-icon {
+        font-size: 20px;
+      }
+    }
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--ion-color-medium);
+  }
+}
+
+ion-item-divider {
+  --background: var(--ion-color-light);
+  --padding-start: 16px;
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+ion-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+
+  ion-icon {
+    font-size: 24px;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--ion-color-medium);
+  }
+}
+
+.logout-button {
+  padding: 16px;
+  margin-bottom: 24px;
+}

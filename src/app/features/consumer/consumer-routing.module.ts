@@ -1,6 +1,7 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
 
+
+import { NgModule } from '@angular/core';
+import { Routes, RouterModule } from '@angular/router';
 import { RestaurantsComponent } from './pages/restaurants/restaurants.component';
 import { RestaurantDetailComponent } from './pages/restaurant-detail/restaurant-detail.component';
 import { CartComponent } from './pages/cart/cart.component';

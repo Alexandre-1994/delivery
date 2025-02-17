@@ -1,3 +1,128 @@
-<p>
-  available-orders works!
-</p>
+<!-- src/app/features/consumer/pages/orders/orders.component.html -->
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <ion-text color="dark">Meus Pedidos</ion-text>
+    </ion-title>
+  </ion-toolbar>
+
+  <!-- Segmento para alternar entre pedidos ativos e histórico -->
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="selectedSegment" (ionChange)="segmentChanged($event)">
+      <ion-segment-button value="active">
+        <ion-label>Ativos</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="history">
+        <ion-label>Histórico</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Pedidos Ativos -->
+  <div *ngIf="selectedSegment === 'active'">
+    <!-- Card para pedido em andamento -->
+    <ion-card *ngFor="let order of activeOrders" class="order-card">
+      <ion-card-header>
+        <div class="order-header">
+          <ion-text color="primary">
+            <h2>{{order.restaurantName}}</h2>
+          </ion-text>
+          <ion-badge [color]="getStatusColor(order.status)">
+            {{order.status}}
+          </ion-badge>
+        </div>
+      </ion-card-header>
+
+      <ion-card-content>
+        <!-- Progresso do pedido -->
+        <div class="order-progress">
+          <div class="progress-item" [class.active]="isStepCompleted(order, 'confirmed')">
+            <ion-icon name="checkmark-circle"></ion-icon>
+            <span>Confirmado</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-item" [class.active]="isStepCompleted(order, 'preparing')">
+            <ion-icon name="restaurant"></ion-icon>
+            <span>Preparando</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-item" [class.active]="isStepCompleted(order, 'delivering')">
+            <ion-icon name="bicycle"></ion-icon>
+            <span>A caminho</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-item" [class.active]="isStepCompleted(order, 'delivered')">
+            <ion-icon name="checkmark-done-circle"></ion-icon>
+            <span>Entregue</span>
+          </div>
+        </div>
+
+        <!-- Detalhes do pedido -->
+        <div class="order-details">
+          <div class="detail-item">
+            <ion-icon name="time-outline"></ion-icon>
+            <span>Previsão: {{order.estimatedDeliveryTime | date:'HH:mm'}}</span>
+          </div>
+          <div class="detail-item">
+            <ion-icon name="receipt-outline"></ion-icon>
+            <span>Pedido #{{order.orderNumber}}</span>
+          </div>
+          <div class="detail-item">
+            <ion-icon name="cash-outline"></ion-icon>
+            <span>{{order.total | currency:'MZN'}}</span>
+          </div>
+        </div>
+
+        <!-- Botões de ação -->
+        <div class="order-actions">
+          <ion-button fill="clear" (click)="trackOrder(order)">
+            <ion-icon name="location-outline" slot="start"></ion-icon>
+            Acompanhar
+          </ion-button>
+          <ion-button fill="clear" (click)="viewOrderDetails(order)">
+            <ion-icon name="eye-outline" slot="start"></ion-icon>
+            Detalhes
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Mensagem quando não há pedidos ativos -->
+    <div class="no-orders" *ngIf="activeOrders.length === 0">
+      <ion-icon name="restaurant-outline"></ion-icon>
+      <h3>Nenhum pedido ativo</h3>
+      <p>Que tal fazer um pedido agora?</p>
+      <ion-button expand="block" routerLink="/consumer/restaurants">
+        Ver Restaurantes
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Histórico de Pedidos -->
+  <div *ngIf="selectedSegment === 'history'">
+    <ion-list>
+      <ion-item *ngFor="let order of orderHistory" detail (click)="viewOrderDetails(order)">
+        <ion-label>
+          <h2>{{order.restaurantName}}</h2>
+          <p>{{order.date | date:'dd/MM/yyyy HH:mm'}}</p>
+          <ion-text color="medium">
+            <p>{{order.items.length}} itens • {{order.total | currency:'MZN'}}</p>
+          </ion-text>
+        </ion-label>
+        <ion-badge slot="end" [color]="getStatusColor(order.status)">
+          {{order.status}}
+        </ion-badge>
+      </ion-item>
+    </ion-list>
+
+    <!-- Mensagem quando não há histórico -->
+    <div class="no-orders" *ngIf="orderHistory.length === 0">
+      <ion-icon name="receipt-outline"></ion-icon>
+      <h3>Nenhum pedido no histórico</h3>
+      <p>Seus pedidos anteriores aparecerão aqui</p>
+    </div>
+  </div>
+</ion-content>
+

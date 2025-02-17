@@ -1,83 +1,149 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>Restaurantes</ion-title>
+<!-- src/app/features/consumer/pages/restaurants/restaurants.component.html -->
+
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button>
+        <ion-icon slot="icon-only" name="location-outline" color="dark"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="location-title">
+        <ion-text color="dark">Entregar em</ion-text>
+        <ion-text color="dark"><b>Beira, Mocambique</b></ion-text>
+      </div>
+    </ion-title>
     <ion-buttons slot="end">
-      <ion-button>
-        <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-      </ion-button>
-      <ion-button>
-        <ion-icon slot="icon-only" name="notifications-outline"></ion-icon>
-      </ion-button>
-      <ion-button id="language-trigger">
-        <ion-icon slot="icon-only" name="language-outline"></ion-icon>
+      <ion-button (click)="goToCart()">
+        <ion-icon slot="icon-only" name="cart-outline" color="dark"></ion-icon>
+        <ion-badge color="danger" *ngIf="cartItems > 0">{{cartItems}}</ion-badge>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
+
+  <ion-toolbar>
+    <ion-searchbar placeholder="Buscar restaurantes ou pratos" 
+                   color="light"
+                   [(ngModel)]="searchTerm"
+                   (ionChange)="search()"
+                   debounce="300"
+                   animated="true">
+    </ion-searchbar>
+  </ion-toolbar>
+
+  <ion-toolbar>
+    <ion-segment scrollable 
+                 [(ngModel)]="selectedCategory" 
+                 (ionChange)="categoryChanged($event)" 
+                 mode="md">
+      <ion-segment-button value="todos">
+        <ion-label>Todos</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="tradicional">
+        <ion-label>Tradicional</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="fast-food">
+        <ion-label>Fast Food</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="pizza">
+        <ion-label>Pizza</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="japonesa">
+        <ion-label>Japonesa</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
 </ion-header>
 
-<!-- Language Popover -->
-<ion-popover trigger="language-trigger" side="bottom">
-  <ng-template>
-    <ion-list>
-      <ion-item >
-        <ion-label>Português</ion-label>
-      </ion-item>
-      <ion-item button >
-        <ion-label>English</ion-label>
-      </ion-item>
-    </ion-list>
-  </ng-template>
-</ion-popover>
-
-<!-- Content -->
 <ion-content>
-  <ion-card *ngFor="let restaurant of filteredRestaurants" [routerLink]="['/restaurant', restaurant.id]">
-    <img [src]="restaurant.image" [alt]="restaurant.name">
-    <ion-card-header>
-      <ion-card-title>{{restaurant.name}}</ion-card-title>
-      <ion-card-subtitle>{{restaurant.cuisine}}</ion-card-subtitle>
-    </ion-card-header>
-    
-    <ion-card-content>
-      <div class="restaurant-info">
-        <span class="rating">
-          <ion-icon name="star" color="warning"></ion-icon>
-          {{restaurant.rating}}
-        </span>
-        <span class="delivery-time">
-          <ion-icon name="time-outline"></ion-icon>
-          {{restaurant.deliveryTime}}min
-        </span>
-        <span class="delivery-fee">
-          <ion-icon name="bicycle-outline"></ion-icon>
-          {{restaurant.deliveryFee | currency:'AOA'}}
-        </span>
-      </div>
-    </ion-card-content>
-  </ion-card>
+  <!-- Banners Promocionais -->
+  <swiper-container [config]="swiperConfig" class="promo-slides">
+    <swiper-slide>
+      <ion-card class="promo-card">
+        <img src="https://placehold.co/800x300" alt="Promoção 1">
+        <div class="promo-overlay">
+          <h3>Novos Restaurantes</h3>
+          <p>Descubra sabores únicos</p>
+        </div>
+      </ion-card>
+    </swiper-slide>
+    <swiper-slide>
+      <ion-card class="promo-card">
+        <img src="https://placehold.co/800x300" alt="Promoção 2">
+        <div class="promo-overlay">
+          <h3>Frete Grátis</h3>
+          <p>Em pedidos acima de 5000 MZN</p>
+        </div>
+      </ion-card>
+    </swiper-slide>
+  </swiper-container>
+
+  <div class="section-title">
+    <h2>Restaurantes Populares</h2>
+    <ion-button fill="clear" size="small" (click)="filterRestaurants()">
+      Ver todos
+    </ion-button>
+  </div>
+
+  <!-- Lista de Restaurantes -->
+  <div class="restaurant-grid">
+    <ion-card *ngFor="let restaurant of filteredRestaurants" 
+              class="restaurant-card" 
+              (click)="goToRestaurant(restaurant)">
+      <div class="restaurant-status" *ngIf="!restaurant.isOpen">Fechado</div>
+      <img [src]="restaurant.image" [alt]="restaurant.name">
+      <ion-card-content>
+        <div class="restaurant-header">
+          <ion-card-title>{{restaurant.name}}</ion-card-title>
+          <ion-badge color="success" *ngIf="restaurant.isOpen">Aberto</ion-badge>
+        </div>
+        <p class="cuisine-type">{{restaurant.cuisine}}</p>
+        <div class="restaurant-info">
+          <span class="rating">
+            <ion-icon name="star" color="warning"></ion-icon>
+            {{restaurant.rating}}
+          </span>
+          <span class="time">
+            <ion-icon name="time-outline"></ion-icon>
+            {{restaurant.deliveryTime}} min
+          </span>
+          <span class="delivery-fee">
+            <ion-icon name="bicycle-outline"></ion-icon>
+            {{restaurant.deliveryFee | currency:'MZN'}}
+          </span>
+        </div>
+        <div class="min-order" *ngIf="restaurant.minOrder">
+          Pedido mínimo: {{restaurant.minOrder | currency:'MZN'}}
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Mensagem quando não há restaurantes -->
+  <div class="no-results" *ngIf="filteredRestaurants.length === 0">
+    <ion-icon name="restaurant-outline" size="large"></ion-icon>
+    <h3>Nenhum restaurante encontrado</h3>
+    <p>Tente mudar os filtros de busca</p>
+  </div>
 </ion-content>
 
-<!-- Footer Tabs -->
-<ion-tabs>
+<!-- Tabs de navegação -->
+<ion-footer class="ion-no-border">
   <ion-tab-bar slot="bottom">
-    <ion-tab-button tab="home">
-      <ion-icon name="home-outline"></ion-icon>
-      <ion-label>Home</ion-label>
+    <ion-tab-button (click)="goToHome()" [selected]="true">
+      <ion-icon name="home"></ion-icon>
+      <ion-label>Início</ion-label>
     </ion-tab-button>
-
-    <ion-tab-button tab="restaurants">
-      <ion-icon name="restaurant-outline"></ion-icon>
-      <ion-label>Restaurantes</ion-label>
+  
+    <ion-tab-button (click)="goToOrders()">
+      <ion-icon name="receipt"></ion-icon>
+      <ion-label>Pedidos</ion-label>
     </ion-tab-button>
-
-    <ion-tab-button tab="orders">
-      <ion-icon name="receipt-outline"></ion-icon>
-      <ion-label>Meus Pedidos</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="profile">
-      <ion-icon name="person-outline"></ion-icon>
-      <ion-label>Meu Perfil</ion-label>
+  
+    <ion-tab-button (click)="goToProfile()">
+      <ion-icon name="person"></ion-icon>
+      <ion-label>Perfil</ion-label>
     </ion-tab-button>
   </ion-tab-bar>
-</ion-tabs>
+</ion-footer>
+
