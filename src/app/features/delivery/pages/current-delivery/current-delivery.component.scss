@@ -1,93 +1,181 @@
-.tracking-map {
-    margin: 16px;
-  
-    .map-container {
-      position: relative;
-      width: 100%;
-      height: 200px;
-      overflow: hidden;
-      border-radius: 12px 12px 0 0;
-  
-      #map {
-        width: 100%;
-        height: 100%;
-      }
-  
-      .delivery-info {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        background: white;
-        padding: 8px;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  
-        .eta, .distance {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 14px;
-          margin: 4px 0;
-  
-          ion-icon {
-            color: var(--ion-color-primary);
-          }
-        }
-      }
-    }
-  
-    .route-points {
-      .point {
-        display: flex;
-        align-items: flex-start;
-        margin: 12px 0;
-  
-        .icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-right: 12px;
-  
-          &.pickup {
-            background: var(--ion-color-primary-light);
-            color: var(--ion-color-primary);
-          }
-  
-          &.delivery {
-            background: var(--ion-color-success-light);
-            color: var(--ion-color-success);
-          }
-  
-          ion-icon {
-            font-size: 18px;
-          }
-        }
-  
-        .details {
-          flex: 1;
-  
-          strong {
-            display: block;
-            margin-bottom: 4px;
-          }
-  
-          p {
-            margin: 0;
-            font-size: 14px;
-            color: var(--ion-color-medium);
-          }
-        }
-      }
-  
-      .connector {
-        width: 2px;
-        height: 24px;
-        background: var(--ion-color-medium);
-        margin-left: 15px;
-        opacity: 0.3;
-      }
-    }
-  }
+
+.map {
+  width: 100%;
+  height: 200px;
+}
+
+.map-container {
+  position: relative;
+}
+
+.delivery-info {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  gap: 12px;
+}
+
+.delivery-info .eta, .delivery-info .distance {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.route-points {
+  margin-top: 10px;
+}
+
+.point {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.point .icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.point .icon.pickup {
+  background-color: var(--ion-color-primary-tint);
+}
+
+.point .icon.delivery {
+  background-color: var(--ion-color-success-tint);
+}
+
+.connector {
+  width: 2px;
+  height: 30px;
+  background-color: var(--ion-color-medium);
+  margin-left: 18px;
+  margin-bottom: 10px;
+}
+
+.delivery-status {
+  padding: 16px;
+  background: white;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.status-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.status-timeline .timeline-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.status-timeline .timeline-item.active {
+  opacity: 1;
+}
+
+.status-timeline .timeline-item.active ion-icon {
+  color: var(--ion-color-primary);
+}
+
+.status-timeline .timeline-item ion-icon {
+  font-size: 24px;
+  margin-right: 12px;
+}
+
+.status-timeline .timeline-item .timeline-content h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.status-timeline .timeline-item .timeline-content p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.order-details {
+  margin: 16px;
+}
+
+.location-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.location-item ion-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  margin-top: 2px;
+}
+
+.location-item .location-details {
+  flex: 1;
+}
+
+.location-item .location-details h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.location-item .location-details p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.location-item .location-details ion-button {
+  margin: 0;
+  --padding-start: 0;
+}
+
+.order-items {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ion-color-light);
+}
+
+.order-items h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.order-items .item {
+  display: flex;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.order-items .item .quantity {
+  color: var(--ion-color-primary);
+  margin-right: 8px;
+  font-weight: 500;
+}
+
+.action-buttons {
+  padding: 16px;
+}
+
+.action-buttons ion-button {
+  margin: 8px 0;
+}

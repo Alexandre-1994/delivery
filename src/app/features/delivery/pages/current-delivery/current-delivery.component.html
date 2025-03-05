@@ -8,7 +8,9 @@
     </ion-title>
   </ion-toolbar>
 </ion-header>
- <div class="tracking-map">
+
+<ion-content>
+  <div class="tracking-map">
     <ion-card>
       <div class="map-container">
         <div #map id="map" class="map"></div>
@@ -51,7 +53,6 @@
       </ion-card-content>
     </ion-card>
   </div>
-<ion-content>
  
   <!-- Status da Entrega -->
   <div class="delivery-status">
@@ -156,127 +157,3 @@
   </ion-toolbar>
 </ion-footer>
 
-<style>
-.delivery-status {
-  padding: 16px;
-  background: white;
-
-  .status-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-  }
-}
-
-.status-timeline {
-  .timeline-item {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 16px;
-    opacity: 0.5;
-
-    &.active {
-      opacity: 1;
-
-      ion-icon {
-        color: var(--ion-color-primary);
-      }
-    }
-
-    ion-icon {
-      font-size: 24px;
-      margin-right: 12px;
-    }
-
-    .timeline-content {
-      h3 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 500;
-      }
-
-      p {
-        margin: 4px 0 0;
-        font-size: 14px;
-        color: var(--ion-color-medium);
-      }
-    }
-  }
-}
-
-.order-details {
-  margin: 16px;
-
-  .location-item {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 20px;
-
-    ion-icon {
-      font-size: 24px;
-      margin-right: 12px;
-      margin-top: 2px;
-    }
-
-    .location-details {
-      flex: 1;
-
-      h3 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 500;
-      }
-
-      p {
-        margin: 4px 0;
-        font-size: 14px;
-        color: var(--ion-color-medium);
-      }
-
-      ion-button {
-        margin: 0;
-        --padding-start: 0;
-      }
-    }
-  }
-}
-
-.order-items {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--ion-color-light);
-
-  h3 {
-    margin: 0 0 12px;
-    font-size: 16px;
-    font-weight: 500;
-  }
-
-  .item {
-    display: flex;
-    margin-bottom: 8px;
-    font-size: 14px;
-
-    .quantity {
-      color: var(--ion-color-primary);
-      margin-right: 8px;
-      font-weight: 500;
-    }
-  }
-}
-
-.action-buttons {
-  padding: 16px;
-
-  ion-button {
-    margin: 8px 0;
-  }
-}
-</style>

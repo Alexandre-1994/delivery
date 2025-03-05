@@ -1,10 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { IonicModule } from '@ionic/angular';
-import { Location } from '@angular/common'; 
+import { IonicModule, ToastController } from '@ionic/angular';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { RestaurantService } from '../../services/restaurant.service';
+import { LoadingController } from '@ionic/angular';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 // Interfaces
 interface MenuItem {
@@ -12,24 +14,36 @@ interface MenuItem {
   name: string;
   description: string;
   price: number;
-  image: string;
-  category: string;
+  photo: string;  // Alinhado com a API (photo em vez de image)
+  category_id: number;  // Alinhado com a API
+  category_name?: string;  // Adicionado para compatibilidade
   available: boolean;
   popular?: boolean;
   spicy?: boolean;
 }
 
-interface Restaurant {
+interface MenuCategory {
   id: number;
   name: string;
-  cuisine: string;
-  rating: number;
-  deliveryTime: number;
-  deliveryFee: number;
-  image: string;
-  minOrder: number;
-  isOpen: boolean;
-  categories: string[];
+  items: MenuItem[];
+}
+
+interface RestaurantDetail {
+  id: number;
+  name: string;
+  description?: string;
+  street?: string;
+  neighborhood?: string;
+  city?: string;
+  province?: string;
+  phone?: string;
+  email?: string;
+  photo?: string;
+  cover?: string;
+  opening_time?: string;
+  closing_time?: string;
+  menu_items?: MenuItem[];
+  dishes?: MenuItem[];  // Alternativa se a API usar "dishes"
 }
 
 @Component({
@@ -46,142 +60,152 @@ interface Restaurant {
 })
 export class RestaurantDetailComponent implements OnInit, OnDestroy {
   // Propriedades do componente
-  restaurant: Restaurant | null = null;
-  selectedCategory: string = 'main';
+  restaurant: RestaurantDetail | null = null;
+  menuItems: MenuItem[] = [];
+  menuCategories: MenuCategory[] = [];
+  selectedCategory: string = 'all';
   cartItems: number = 0;
-  filteredMenuItems: MenuItem[] = [];
-  private routeSub: Subscription | null = null;
-
-  // Categorias do menu
-  categories = [
-    { id: 'main', name: 'Pratos Principais' },
-    { id: 'sides', name: 'Acompanhamentos' },
-    { id: 'drinks', name: 'Bebidas' },
-    { id: 'desserts', name: 'Sobremesas' }
-  ];
-
-  // Itens do menu
-  menuItems: MenuItem[] = [
-    {
-      id: 1,
-      name: 'Mufete Tradicional',
-      description: 'Peixe grelhado com feijão de óleo de palma, banana, batata doce e faroja',
-      price: 5000,
-      image: 'https://loremflickr.com/80/80/food',
-      category: 'main',
-      available: true,
-      popular: true
-    },
-    {
-      id: 2,
-      name: 'Calulu',
-      description: 'Peixe seco com legumes, quiabo e óleo de palma',
-      price: 4500,
-      image: 'https://loremflickr.com/80/80/food',
-      category: 'main',
-      available: true,
-      spicy: true
-    },
-    {
-      id: 3,
-      name: 'Moamba de Galinha',
-      description: 'Galinha com molho de gimboa e funge',
-      price: 4000,
-      image: 'https://loremflickr.com/80/80/food',
-      category: 'main',
-      available: true
-    },
-    {
-      id: 4,
-      name: 'Sumo de Múcua',
-      description: 'Bebida tradicional Mocambiquena',
-      price: 1500,
-      image: 'https://loremflickr.com/80/80/drink',
-      category: 'drinks',
-      available: true
-    }
-  ];
+  isLoading: boolean = true;
+  errorMessage: string = '';
 
   constructor(
     private route: ActivatedRoute,
-    private location: Location
+    private router: Router,
+    private restaurantService: RestaurantService,
+    private loadingCtrl: LoadingController,
+    private toastCtrl: ToastController
   ) {}
 
-  ngOnInit(): void {
-    // Inscreve-se nos parâmetros da rota
-    this.routeSub = this.route.params.subscribe(params => {
-      const id = +params['id'];
-      this.loadRestaurantData(id);
+  async ngOnInit() {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      await this.loadRestaurantDetails(Number(id));
+    } else {
+      this.errorMessage = 'ID do restaurante não encontrado';
+    }
+  }
+
+  ngOnDestroy() {
+    // Implementação vazia para cumprir a interface OnDestroy
+  }
+
+  async loadRestaurantDetails(id: number) {
+    const loading = await this.loadingCtrl.create({
+      message: 'Carregando restaurante...'
+    });
+    await loading.present();
+    this.isLoading = true;
+
+    try {
+      // Usando firstValueFrom em vez de toPromise (obsoleto)
+      const data = await firstValueFrom(this.restaurantService.getRestaurantDetails(id));
+      this.restaurant = data;
+      
+      // Verificar se temos menu_items nas respostas
+      if (data.menu_items && Array.isArray(data.menu_items)) {
+        this.menuItems = data.menu_items;
+        this.organizeMenuByCategories();
+      } else if (data.dishes && Array.isArray(data.dishes)) {
+        // Alternativa se a API usar "dishes" em vez de "menu_items"
+        this.menuItems = data.dishes;
+        this.organizeMenuByCategories();
+      }
+      
+    } catch (error) {
+      console.error('Erro ao carregar detalhes do restaurante:', error);
+      this.errorMessage = 'Não foi possível carregar os detalhes deste restaurante';
+    } finally {
+      this.isLoading = false;
+      loading.dismiss();
+    }
+  }
+
+  organizeMenuByCategories() {
+    // Se não temos itens do menu, não fazemos nada
+    if (!this.menuItems || this.menuItems.length === 0) return;
+
+    // Criar um mapa de categorias
+    const categoriesMap = new Map<number, MenuCategory>();
+    
+    // Adicionar categoria "Todos"
+    categoriesMap.set(0, {
+      id: 0,
+      name: 'Todos',
+      items: []
     });
 
-    // Inicializa os itens filtrados
-    this.filterMenuItems();
+    // Organizar itens por categoria
+    this.menuItems.forEach(item => {
+      // Garantir que temos category_id
+      const categoryId = item.category_id || 0;
+      
+      // Se a categoria não existe ainda, criar
+      if (!categoriesMap.has(categoryId)) {
+        categoriesMap.set(categoryId, {
+          id: categoryId,
+          name: item.category_name || `Categoria ${categoryId}`,
+          items: []
+        });
+      }
+      
+      // Adicionar o item tanto na categoria específica quanto em "Todos"
+      categoriesMap.get(categoryId)?.items.push(item);
+      categoriesMap.get(0)?.items.push(item);
+    });
+
+    // Converter o mapa para array para exibição
+    this.menuCategories = Array.from(categoriesMap.values());
   }
 
-  ngOnDestroy(): void {
-    // Limpa a inscrição para evitar memory leaks
-    if (this.routeSub) {
-      this.routeSub.unsubscribe();
+  filterByCategory(categoryId: number | string) {
+    if (typeof categoryId === 'string') {
+      this.selectedCategory = categoryId;
+    } else {
+      this.selectedCategory = categoryId.toString();
     }
   }
 
-  private loadRestaurantData(id: number): void {
-    // Simula carregamento de dados do restaurante
-    this.restaurant = {
-      id: id,
-      name: 'Restaurante Tradicional',
-      cuisine: 'Comida Mocambiquena',
-      rating: 4.5,
-      deliveryTime: 30,
-      deliveryFee: 1500,
-      image: 'https://picsum.photos/400/200?food',
-      minOrder: 3000,
-      isOpen: true,
-      categories: ['tradicional', 'Mocambiquena']
-    };
-  }
-
-  // Filtra itens do menu baseado na categoria selecionada
-  filterMenuItems(): void {
-    this.filteredMenuItems = this.menuItems.filter(item => 
-      item.category === this.selectedCategory && item.available
-    );
-  }
-
-  // Manipula mudança de categoria
-  onCategoryChange(event: any): void {
-    this.selectedCategory = event.detail.value;
-    this.filterMenuItems();
-  }
-
-  // Adiciona item ao carrinho
-  addToCart(item: MenuItem): void {
-    if (!this.restaurant?.isOpen) {
-      // Mostra mensagem de restaurante fechado
-      return;
+  getFilteredMenuItems(): MenuItem[] {
+    if (this.selectedCategory === 'all') {
+      return this.menuItems;
     }
+    
+    return this.menuItems.filter(item => {
+      // Garantir que temos category_id e que é do tipo correto
+      const itemCategoryId = item.category_id?.toString() || '0';
+      return itemCategoryId === this.selectedCategory;
+    });
+  }
 
-    this.cartItems++;
-    console.log('Added to cart:', item);
+  addToCart(item: MenuItem) {
     // Aqui você implementaria a lógica de adicionar ao carrinho
+    // usando um serviço de carrinho
+    
+    this.cartItems++;
+    
+    this.toastCtrl.create({
+      message: `${item.name} adicionado ao carrinho`,
+      duration: 2000,
+      position: 'bottom'
+    }).then(toast => toast.present());
   }
 
-  // Navega de volta
-  goBack(): void {
-    this.location.back();
+  // Método auxiliar para obter URL completa da imagem
+  getImageUrl(photoName: string | null | undefined): string {
+    if (!photoName) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/restaurant/${photoName}`;
   }
 
-  // Verifica se o pedido atinge o mínimo
-  meetsMinOrder(): boolean {
-    // Implementar lógica para verificar valor mínimo do pedido
-    return true;
+  getDishImageUrl(photoName: string | null | undefined): string {
+    if (!photoName) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/restaurant/${photoName}`;
   }
 
-  // Formata preço
-  formatPrice(price: number): string {
-    return price.toLocaleString('pt-MO', {
-      style: 'currency',
-      currency: 'MZN'
-    });
+  goToCart() {
+    this.router.navigate(['/consumer/cart']);
+  }
+
+  goBack() {
+    this.router.navigate(['/consumer/restaurants']);
   }
 }

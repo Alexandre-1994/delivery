@@ -1,69 +1,130 @@
-.restaurant-banner {
+
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  text-align: center;
+  padding: 20px;
+}
+
+.loading-container ion-spinner, .error-container ion-icon {
+  margin-bottom: 16px;
+  font-size: 48px;
+}
+
+.restaurant-cover {
   position: relative;
-  
-  img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-  }
+  height: 200px;
+  overflow: hidden;
+}
 
-  .restaurant-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px;
-    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-    color: white;
+.restaurant-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-    h1 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: bold;
-    }
+.restaurant-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  color: white;
+}
 
-    p {
-      margin: 5px 0;
-      opacity: 0.9;
-    }
+.restaurant-info-overlay h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 600;
+}
 
-    .stats {
-      display: flex;
-      gap: 15px;
-      margin-top: 10px;
+.restaurant-info-overlay p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  opacity: 0.9;
+}
 
-      span {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 14px;
+.restaurant-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
 
-        ion-icon {
-          font-size: 16px;
-        }
-      }
-    }
-  }
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.menu-categories {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ion-color-light);
 }
 
 .menu-items {
-  ion-thumbnail {
-    --size: 80px;
-    margin-right: 10px;
-  }
+  padding: 16px;
+}
 
-  h2 {
-    font-weight: bold;
-    font-size: 16px;
-  }
+.menu-item {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --border-color: var(--ion-color-light);
+}
 
-  p {
-    color: var(--ion-color-medium);
-    font-size: 14px;
-  }
+.menu-item h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 4px;
+}
 
-  h3 {
-    font-weight: bold;
-    margin: 5px 0 0;
-  }
+.menu-item p {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  margin: 0 0 8px;
+  max-height: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.menu-item .price {
+  font-weight: 600;
+}
+
+.no-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ion-color-medium);
+}
+
+.no-items ion-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.no-items h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.no-items p {
+  margin: 0;
+  font-size: 14px;
 }
