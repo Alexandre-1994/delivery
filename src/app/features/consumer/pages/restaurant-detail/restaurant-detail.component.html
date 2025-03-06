@@ -39,18 +39,14 @@
       <img [src]="getImageUrl(restaurant.cover || restaurant.photo)" [alt]="restaurant.name">
       <div class="restaurant-info-overlay">
         <h1>{{ restaurant.name }}</h1>
-        <p *ngIf="restaurant.neighborhood || restaurant.city">
-          <span *ngIf="restaurant.neighborhood">{{ restaurant.neighborhood }}</span>
-          <span *ngIf="restaurant.neighborhood && restaurant.city">, </span>
-          <span *ngIf="restaurant.city">{{ restaurant.city }}</span>
-        </p>
+        <p>{{ restaurant.neighborhood }}, {{ restaurant.city }}</p>
         <div class="restaurant-stats">
           <!-- Informações adicionais como avaliação, tempo de entrega, etc. -->
           <div class="stat-item" *ngIf="restaurant.opening_time && restaurant.closing_time">
             <ion-icon name="time-outline"></ion-icon>
             <span>{{ restaurant.opening_time }} - {{ restaurant.closing_time }}</span>
           </div>
-          <div class="stat-item" *ngIf="restaurant.phone">
+          <div class="stat-item">
             <ion-icon name="call-outline"></ion-icon>
             <span>{{ restaurant.phone }}</span>
           </div>
@@ -61,7 +57,20 @@
     <!-- Menu do Restaurante -->
     <div class="restaurant-menu">
       <!-- Categorias do Menu -->
-     
+      <div class="menu-categories">
+        <ion-segment [(ngModel)]="selectedCategory" (ionChange)="filterByCategory($event.detail.value!)" scrollable>
+          <!-- Opção "Todos" sempre disponível -->
+          <ion-segment-button value="all">
+            <ion-label>Todos</ion-label>
+          </ion-segment-button>
+          
+          <!-- Categorias dinâmicas do menu -->
+          <ion-segment-button *ngFor="let category of menuCategories" [value]="category.id.toString()" [disabled]="category.id === 0">
+            <ion-label>{{ category.name }}</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
       <!-- Itens do Menu -->
       <div class="menu-items">
         <!-- Quando não há itens -->
@@ -80,15 +89,73 @@
             <ion-label>
               <h2>{{ item.name }}</h2>
               <p>{{ item.description }}</p>
-              <ion-text color="primary" class="price">{{ item.price | currency:'AOA':'symbol':'1.0-0' }}</ion-text>
+              <ion-text color="primary" class="price">{{ item.price | currency:'AOA' }}</ion-text>
             </ion-label>
-            <ion-button slot="end" fill="clear" (click)="addToCart(item)">
-              <ion-icon name="add-circle" slot="icon-only"></ion-icon>
-            </ion-button>
+            <div class="item-actions">
+              <ion-button fill="clear" (click)="openItemDetails(item)" class="details-btn">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                <ion-label>Detalhes</ion-label>
+              </ion-button>
+              <ion-button fill="clear" (click)="addToCart(item)" class="add-btn">
+                <ion-icon name="add-circle"></ion-icon>
+                <ion-label>Adicionar</ion-label>
+              </ion-button>
+            </div>
           </ion-item>
         </ion-list>
       </div>
     </div>
   </div>
-</ion-content>
 
+  <!-- Modal de Detalhes do Item (implementado como um overlay customizado) -->
+  <div class="modal-overlay" *ngIf="showModal && selectedItem">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>{{ selectedItem.name }}</h2>
+        <ion-button fill="clear" (click)="closeModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="item-image">
+          <img [src]="getDishImageUrl(selectedItem.photo)" [alt]="selectedItem.name">
+        </div>
+        
+        <div class="item-details">
+          <h3>Descrição</h3>
+          <p>{{ selectedItem.description }}</p>
+          
+          <div class="item-price">
+            <h3>Preço</h3>
+            <p>{{ selectedItem.price | currency:'AOA' }}</p>
+          </div>
+          
+          <div class="quantity-selector">
+            <h3>Quantidade</h3>
+            <div class="quantity-controls">
+              <ion-button fill="clear" (click)="decrementQuantity()">
+                <ion-icon name="remove-circle"></ion-icon>
+              </ion-button>
+              <span class="quantity">{{ itemQuantity }}</span>
+              <ion-button fill="clear" (click)="incrementQuantity()">
+                <ion-icon name="add-circle"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+          
+          <div class="total-price">
+            <h3>Total</h3>
+            <p>{{ selectedItem.price * itemQuantity | currency:'AOA' }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <ion-button expand="block" (click)="addToCartFromModal()">
+          Adicionar ao Carrinho
+        </ion-button>
+      </div>
+    </div>
+  </div>
+</ion-content>
