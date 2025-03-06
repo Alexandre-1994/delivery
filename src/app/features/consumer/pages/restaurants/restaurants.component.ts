@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, LoadingController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,9 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { RestaurantService, Restaurant, Category, Dish } from '../../services/restaurant.service';
+import { AuthService } from '../../services/auth.service'; // Import AuthService
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 // Registrar o componente Swiper
 register(); 
@@ -27,11 +30,13 @@ register();
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class RestaurantsComponent implements OnInit {
+export class RestaurantsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   // Variáveis de estado
   searchTerm: string = '';
   cartItems: number = 0;
   selectedCategory: string = 'all';
+  userName: string = ''; // Add userName property
   
   // Dados da API
   restaurants: Restaurant[] = [];
@@ -55,30 +60,51 @@ export class RestaurantsComponent implements OnInit {
   constructor(
     private restaurantService: RestaurantService,
     private loadingCtrl: LoadingController,
-    private router: Router
-  ) {}
+    private router: Router,
+    private authService: AuthService // Inject AuthService
+  ) {
+    // Check authentication
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+    }
+  }
 
   ngOnInit() {
     this.loadHomeData();
+    this.userName = this.authService.getUserName(); // Get the logged-in user's name
+    this.checkCartItems();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  async checkCartItems() {
+    // Replace with your actual cart service implementation
+    this.cartItems = 0;
   }
 
   loadHomeData() {
     this.isLoading = true;
-    this.restaurantService.getAllData().subscribe({
-      next: (data) => {
-        this.restaurants = data.restaurants || [];
-        this.categories = data.categories || [];
-        this.topDishes = data.topDishes || [];
-        
-        this.filteredRestaurants = [...this.restaurants];
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error('Erro ao carregar dados:', err);
-        this.errorMessage = 'Não foi possível carregar os dados. Tente novamente.';
-        this.isLoading = false;
-      }
-    });
+    this.errorMessage = '';
+
+    this.restaurantService.getAllData()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.restaurants = data.restaurants || [];
+          this.categories = data.categories || [];
+          this.topDishes = data.topDishes || [];
+          this.filteredRestaurants = [...this.restaurants];
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error('Erro ao carregar dados:', err);
+          this.errorMessage = 'Não foi possível carregar os dados. Tente novamente.';
+          this.isLoading = false;
+        }
+      });
   }
 
   search() {
@@ -166,5 +192,22 @@ export class RestaurantsComponent implements OnInit {
     setTimeout(() => {
       event.target.complete();
     }, 1000);
+  }
+
+  async logout() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Saindo...',
+      duration: 1000
+    });
+    await loading.present();
+    
+    try {
+      this.authService.logout();
+      await loading.dismiss();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      await loading.dismiss();
+      console.error('Erro ao fazer logout:', error);
+    }
   }
 }

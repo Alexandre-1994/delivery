@@ -1,0 +1,171 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/consumer/cart" color="dark"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <ion-text color="dark">Finalizar Pedido</ion-text>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Endereços -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Endereço de Entrega</h2>
+      <ion-button fill="clear" (click)="showAddAddressModal()">
+        <ion-icon name="add"></ion-icon>
+        Novo Endereço
+      </ion-button>
+    </div>
+
+    <div class="addresses-list" *ngIf="addresses.length > 0">
+      <ion-radio-group [(ngModel)]="selectedAddressId">
+        <ion-item *ngFor="let address of addresses">
+          <ion-label>
+            <h3>{{address.street}}, {{address.number}}</h3>
+            <p>{{address.neighborhood}}, {{address.city}}</p>
+            <p *ngIf="address.complement">{{address.complement}}</p>
+          </ion-label>
+          <ion-radio [value]="address.id"></ion-radio>
+        </ion-item>
+      </ion-radio-group>
+    </div>
+
+    <!-- Se não houver endereços, mostra formulário -->
+    <div class="no-addresses" *ngIf="addresses.length === 0">
+      <p>Você ainda não tem endereços cadastrados</p>
+      <ion-button expand="block" (click)="showAddAddressModal()">
+        Cadastrar Endereço
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Métodos de Pagamento -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Forma de Pagamento</h2>
+      <ion-button fill="clear" (click)="showAddPaymentModal()">
+        <ion-icon name="add"></ion-icon>
+        Novo Método
+      </ion-button>
+    </div>
+
+    <div class="payment-methods-list" *ngIf="paymentMethods.length > 0">
+      <ion-radio-group [(ngModel)]="selectedPaymentMethodId">
+        <ion-item *ngFor="let method of paymentMethods">
+          <ion-label>
+            <h3>{{method.type === 'bank_card' ? 'Cartão' : (method.type === 'mpesa' ? 'M-Pesa' : 'E-mola')}}</h3>
+            <p *ngIf="method.type === 'bank_card'">**** **** **** {{method.last4}}</p>
+          </ion-label>
+          <ion-radio [value]="method.id"></ion-radio>
+        </ion-item>
+      </ion-radio-group>
+    </div>
+
+    <!-- Se não houver métodos de pagamento, mostra opções -->
+    <div class="no-payment-methods" *ngIf="paymentMethods.length === 0">
+      <p>Você ainda não tem métodos de pagamento cadastrados</p>
+      <ion-button expand="block" (click)="showAddPaymentModal()">
+        Cadastrar Método de Pagamento
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Resumo do Pedido -->
+  <div class="section">
+    <h2>Resumo do Pedido</h2>
+    <div class="order-summary">
+      <div class="summary-item">
+        <span>Subtotal</span>
+        <span>{{subtotal | currency:'MZN'}}</span>
+      </div>
+      <div class="summary-item">
+        <span>Taxa de Entrega</span>
+        <span>{{deliveryFee | currency:'MZN'}}</span>
+      </div>
+      <div class="summary-item" *ngIf="discount > 0">
+        <span>Desconto</span>
+        <span>-{{discount | currency:'MZN'}}</span>
+      </div>
+      <div class="summary-item total">
+        <span>Total</span>
+        <span>{{total | currency:'MZN'}}</span>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="checkout-footer">
+      <div class="total-info">
+        <span>Total a Pagar</span>
+        <ion-text color="primary">
+          <strong>{{total | currency:'MZN'}}</strong>
+        </ion-text>
+      </div>
+      <ion-button 
+        expand="block" 
+        (click)="confirmOrder()"
+        [disabled]="!canConfirmOrder()">
+        Confirmar Pedido
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>
+
+<style>
+.section {
+  padding: 16px;
+  background: white;
+  margin-bottom: 8px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.no-addresses, .no-payment-methods {
+  text-align: center;
+  padding: 20px;
+}
+
+.no-addresses p, .no-payment-methods p {
+  color: var(--ion-color-medium);
+  margin-bottom: 16px;
+}
+
+.order-summary .summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.order-summary .total {
+  font-weight: bold;
+  border-top: 1px solid var(--ion-color-light);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.checkout-footer {
+  padding: 16px;
+}
+
+.total-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+</style>

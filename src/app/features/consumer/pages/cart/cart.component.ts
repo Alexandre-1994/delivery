@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CartService, CartItem } from '../../services/cart.service';
 import { Subscription } from 'rxjs';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-cart',
@@ -36,6 +37,7 @@ export class CartComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private cartService: CartService,
+    private orderService: OrderService, 
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController
@@ -179,40 +181,84 @@ export class CartComponent implements OnInit, OnDestroy {
         duration: 10,
         position: 'bottom',
         color: 'danger'
-      }).then(toast => toast.present());
+      }).then(toast => toast.present()); 
     }
   }
 
   // Método para finalizar pedido
+  // async checkout(): Promise<void> {
+  //   // Validar pedido mínimo
+  //   if (this.total < (this.restaurant?.minOrder || 0)) {
+  //     const remaining = this.getRemainingForMinOrder();
+  //     this.toastCtrl.create({
+  //       message: `Pedido mínimo não atingido. Adicione mais ${this.formatCurrency(remaining)}`,
+  //       duration: 3000,
+  //       position: 'bottom',
+  //       color: 'warning'
+  //     }).then(toast => toast.present());
+  //     return;
+  //   }
+  
+  //   const loading = await this.loadingCtrl.create({
+  //     message: 'Processando seu pedido...'
+  //   });
+  //   await loading.present();
+  
+  //   try {
+  //     // Preparar dados do pedido no formato esperado pela API
+  //     const orderData = this.orderService.prepareOrderData(
+  //       this.cartItems,
+  //       this.restaurant,
+  //       this.subtotal,
+  //       this.restaurant?.deliveryFee || 0,
+  //       this.discount,
+  //       this.total,
+  //       this.orderNotes,
+  //       this.couponCode
+  //     );
+  
+  //     // Enviar pedido para a API
+  //     const response = await this.orderService.createOrder(orderData).toPromise();
+  
+  //     // Limpar o carrinho após o pedido ser bem-sucedido
+  //     this.cartService.clearCart();
+  
+  //     loading.dismiss();
+  
+  //     // Mostrar confirmação
+  //     const alert = await this.alertCtrl.create({
+  //       header: 'Pedido Realizado',
+  //       message: 'Seu pedido foi enviado com sucesso!',
+  //       buttons: [
+  //         {
+  //           text: 'OK',
+  //           handler: () => {
+  //             // Navegar para a página de pedidos ou detalhes do pedido
+  //             this.router.navigate(['/consumer/orders']);
+  //           }
+  //         }
+  //       ]
+  //     });
+  //     await alert.present();
+  
+  //   } catch (error) {
+  //     loading.dismiss();
+  //     console.error('Erro ao processar o pedido:', error);
+  
+  //     // Mostrar mensagem de erro
+  //     const toast = await this.toastCtrl.create({
+  //       message: 'Ocorreu um erro ao processar seu pedido. Tente novamente.',
+  //       duration: 3000,
+  //       position: 'bottom',
+  //       color: 'danger'
+  //     });
+  //     await toast.present();
+  //   }
+  // }
   async checkout(): Promise<void> {
-    // Validar pedido mínimo
-    if (this.total < (this.restaurant?.minOrder || 0)) {
-      const remaining = this.getRemainingForMinOrder();
-      this.toastCtrl.create({
-        message: `Pedido mínimo não atingido. Adicione mais ${this.formatCurrency(remaining)}`,
-        duration: 10,
-        position: 'bottom',
-        color: 'warning'
-      }).then(toast => toast.present());
-      return;
-    }
-
-    // Criar objeto do pedido
-    const order = {
-      restaurantId: this.restaurant?.id,
-      items: this.cartItems,
-      subtotal: this.subtotal,
-      deliveryFee: this.restaurant?.deliveryFee,
-      discount: this.discount,
-      total: this.total,
-      notes: this.orderNotes,
-      couponCode: this.couponCode
-    };
-
-    // Enviar para a página de checkout
-    this.router.navigate(['/consumer/checkout'], { state: { order } });
+    // Navegar para a página de checkout em vez de processar o pedido diretamente
+    this.router.navigate(['/consumer/checkout']);
   }
-
   // Validações
   isMinOrderMet(): boolean {
     return this.subtotal >= (this.restaurant?.minOrder || 0);
