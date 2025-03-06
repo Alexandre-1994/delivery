@@ -1,35 +1,28 @@
+
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { IonicModule } from '@ionic/angular';
-import { Location } from '@angular/common'; 
-import { ActivatedRoute } from '@angular/router';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { IonicModule, LoadingController, ToastController, AlertController } from '@ionic/angular';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { RestaurantService } from '../../services/restaurant.service';
+import { CartService, CartItem } from '../../services/cart.service';
 import { Subscription } from 'rxjs';
 
-// Interfaces
 interface MenuItem {
   id: number;
   name: string;
   description: string;
   price: number;
   image: string;
-  category: string;
-  available: boolean;
-  popular?: boolean;
-  spicy?: boolean;
+  category_id: number;
+  category_name?: string;
+  quantity?: number;
 }
 
-interface Restaurant {
+interface MenuCategory {
   id: number;
   name: string;
-  cuisine: string;
-  rating: number;
-  deliveryTime: number;
-  deliveryFee: number;
-  image: string;
-  minOrder: number;
-  isOpen: boolean;
-  categories: string[];
+  items: MenuItem[];
 }
 
 @Component({
@@ -37,151 +30,257 @@ interface Restaurant {
   templateUrl: './restaurant-detail.component.html',
   styleUrls: ['./restaurant-detail.component.scss'],
   standalone: true,
-  imports: [
-    IonicModule,
-    CommonModule, 
-    FormsModule,
-    CurrencyPipe
-  ]
+  imports: [CommonModule, IonicModule, FormsModule]
 })
 export class RestaurantDetailComponent implements OnInit, OnDestroy {
-  // Propriedades do componente
-  restaurant: Restaurant | null = null;
-  selectedCategory: string = 'main';
+  restaurant: any = null;
+  menuItems: MenuItem[] = [];
+  menuCategories: MenuCategory[] = [];
+  selectedCategory: string = 'all';
   cartItems: number = 0;
-  filteredMenuItems: MenuItem[] = [];
-  private routeSub: Subscription | null = null;
+  isLoading: boolean = true;
+  errorMessage: string = '';
 
-  // Categorias do menu
-  categories = [
-    { id: 'main', name: 'Pratos Principais' },
-    { id: 'sides', name: 'Acompanhamentos' },
-    { id: 'drinks', name: 'Bebidas' },
-    { id: 'desserts', name: 'Sobremesas' }
-  ];
+  // Controle do modal de detalhes
+  selectedItem: MenuItem | null = null;
+  itemQuantity: number = 1;
+  showModal: boolean = false;
 
-  // Itens do menu
-  menuItems: MenuItem[] = [
-    {
-      id: 1,
-      name: 'Mufete Tradicional',
-      description: 'Peixe grelhado com feijão de óleo de palma, banana, batata doce e faroja',
-      price: 5000,
-      image: 'https://loremflickr.com/80/80/food',
-      category: 'main',
-      available: true,
-      popular: true
-    },
-    {
-      id: 2,
-      name: 'Calulu',
-      description: 'Peixe seco com legumes, quiabo e óleo de palma',
-      price: 4500,
-      image: 'https://loremflickr.com/80/80/food',
-      category: 'main',
-      available: true,
-      spicy: true
-    },
-    {
-      id: 3,
-      name: 'Moamba de Galinha',
-      description: 'Galinha com molho de gimboa e funge',
-      price: 4000,
-      image: 'https://loremflickr.com/80/80/food',
-      category: 'main',
-      available: true
-    },
-    {
-      id: 4,
-      name: 'Sumo de Múcua',
-      description: 'Bebida tradicional Mocambiquena',
-      price: 1500,
-      image: 'https://loremflickr.com/80/80/drink',
-      category: 'drinks',
-      available: true
-    }
-  ];
+  // Subscriptions
+  private cartSubscription: Subscription | null = null;
+  private cartRestaurantSubscription: Subscription | null = null;
+  private currentRestaurantId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
-    private location: Location
+    private router: Router,
+    private restaurantService: RestaurantService,
+    private cartService: CartService,
+    private loadingCtrl: LoadingController,
+    private toastCtrl: ToastController,
+    private alertCtrl: AlertController
   ) {}
 
-  ngOnInit(): void {
-    // Inscreve-se nos parâmetros da rota
-    this.routeSub = this.route.params.subscribe(params => {
-      const id = +params['id'];
-      this.loadRestaurantData(id);
+  async ngOnInit() {
+    // Inscrever-se para atualizações do carrinho
+    this.cartSubscription = this.cartService.getItemCount().subscribe(count => {
+      this.cartItems = count;
     });
 
-    // Inicializa os itens filtrados
-    this.filterMenuItems();
-  }
+    // Verificar se já temos itens de outro restaurante
+    this.cartRestaurantSubscription = this.cartService.getCurrentRestaurantId().subscribe(restaurantId => {
+      this.currentRestaurantId = restaurantId;
+    });
 
-  ngOnDestroy(): void {
-    // Limpa a inscrição para evitar memory leaks
-    if (this.routeSub) {
-      this.routeSub.unsubscribe();
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      await this.loadRestaurantDetails(Number(id));
+    } else {
+      this.errorMessage = 'ID do restaurante não encontrado';
     }
   }
 
-  private loadRestaurantData(id: number): void {
-    // Simula carregamento de dados do restaurante
-    this.restaurant = {
-      id: id,
-      name: 'Restaurante Tradicional',
-      cuisine: 'Comida Mocambiquena',
-      rating: 4.5,
-      deliveryTime: 30,
-      deliveryFee: 1500,
-      image: 'https://picsum.photos/400/200?food',
-      minOrder: 3000,
-      isOpen: true,
-      categories: ['tradicional', 'Mocambiquena']
-    };
+  ngOnDestroy() {
+    // Limpar subscriptions
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
+    if (this.cartRestaurantSubscription) {
+      this.cartRestaurantSubscription.unsubscribe();
+    }
   }
 
-  // Filtra itens do menu baseado na categoria selecionada
-  filterMenuItems(): void {
-    this.filteredMenuItems = this.menuItems.filter(item => 
-      item.category === this.selectedCategory && item.available
+  async loadRestaurantDetails(id: number) {
+    const loading = await this.loadingCtrl.create({
+      message: 'Carregando restaurante...'
+    });
+    await loading.present();
+    this.isLoading = true;
+
+    try {
+      const data = await this.restaurantService.getRestaurantDetails(id).toPromise();
+      this.restaurant = data;
+
+      // Verificar se temos menu_items ou dishes na resposta
+      if (data.menu_items && Array.isArray(data.menu_items)) {
+        this.menuItems = data.menu_items.map((item: any) => ({...item, quantity: 1}));
+        this.organizeMenuByCategories();
+      } else if (data.dishes && Array.isArray(data.dishes)) {
+        // Alternativa se a API usar "dishes" em vez de "menu_items"
+        this.menuItems = data.dishes.map((item: any) => ({...item, quantity: 1}));
+        this.organizeMenuByCategories();
+      }
+
+    } catch (error) {
+      console.error('Erro ao carregar detalhes do restaurante:', error);
+      this.errorMessage = 'Não foi possível carregar os detalhes deste restaurante';
+    } finally {
+      this.isLoading = false;
+      loading.dismiss();
+    }
+  }
+
+  organizeMenuByCategories() {
+    // Se não temos itens do menu, não fazemos nada
+    if (!this.menuItems || this.menuItems.length === 0) return;
+
+    // Criar um mapa de categorias
+    const categoriesMap = new Map<number, MenuCategory>();
+
+    // Adicionar categoria "Todos"
+    categoriesMap.set(0, {
+      id: 0,
+      name: 'Todos',
+      items: []
+    });
+
+    // Organizar itens por categoria
+    this.menuItems.forEach(item => {
+      // Se a categoria não existe ainda, criar
+      if (!categoriesMap.has(item.category_id)) {
+        categoriesMap.set(item.category_id, {
+          id: item.category_id,
+          name: item.category_name || `Categoria ${item.category_id}`,
+          items: []
+        });
+      }
+
+      // Adicionar o item tanto na categoria específica quanto em "Todos"
+      categoriesMap.get(item.category_id)?.items.push(item);
+      categoriesMap.get(0)?.items.push(item);
+    });
+
+    // Converter o mapa para array para exibição
+    this.menuCategories = Array.from(categoriesMap.values());
+  }
+
+  filterByCategory(categoryId: number | string) {
+    if (typeof categoryId === 'string') {
+      this.selectedCategory = categoryId;
+    } else {
+      this.selectedCategory = categoryId.toString();
+    }
+  }
+
+  getFilteredMenuItems(): MenuItem[] {
+    if (this.selectedCategory === 'all') {
+      return this.menuItems;
+    }
+
+    return this.menuItems.filter(item =>
+      item.category_id.toString() === this.selectedCategory
     );
   }
 
-  // Manipula mudança de categoria
-  onCategoryChange(event: any): void {
-    this.selectedCategory = event.detail.value;
-    this.filterMenuItems();
+  // Abrir modal de detalhes do item
+  openItemDetails(item: MenuItem) {
+    this.selectedItem = {...item, quantity: 1};
+    this.itemQuantity = 1;
+    this.showModal = true;
   }
 
-  // Adiciona item ao carrinho
-  addToCart(item: MenuItem): void {
-    if (!this.restaurant?.isOpen) {
-      // Mostra mensagem de restaurante fechado
-      return;
+  // Fechar modal
+  closeModal() {
+    this.showModal = false;
+    this.selectedItem = null;
+  }
+
+  // Aumentar quantidade no modal
+  incrementQuantity() {
+    if (this.itemQuantity < 10) { // Limite de 10 por pedido
+      this.itemQuantity++;
     }
-
-    this.cartItems++;
-    console.log('Added to cart:', item);
-    // Aqui você implementaria a lógica de adicionar ao carrinho
   }
 
-  // Navega de volta
-  goBack(): void {
-    this.location.back();
+  // Diminuir quantidade no modal
+  decrementQuantity() {
+    if (this.itemQuantity > 1) {
+      this.itemQuantity--;
+    }
   }
 
-  // Verifica se o pedido atinge o mínimo
-  meetsMinOrder(): boolean {
-    // Implementar lógica para verificar valor mínimo do pedido
-    return true;
+  // Adicionar ao carrinho pelo modal
+  async addToCartFromModal() {
+    if (this.selectedItem) {
+      const quantity = this.itemQuantity;
+      await this.addItemToCart(this.selectedItem, quantity);
+      this.closeModal();
+    }
   }
 
-  // Formata preço
-  formatPrice(price: number): string {
-    return price.toLocaleString('pt-MO', {
-      style: 'currency',
-      currency: 'MZN'
-    });
+  // Adicionar ao carrinho direto da lista
+  async addToCart(item: MenuItem) {
+    await this.addItemToCart(item, 1);
+  }
+
+  // Método comum para adicionar ao carrinho
+  async addItemToCart(item: MenuItem, quantity: number) {
+    // Verificar se já existe um restaurante diferente no carrinho
+    if (this.currentRestaurantId !== null &&
+        this.currentRestaurantId !== this.restaurant.id) {
+      // Perguntar se o usuário quer limpar o carrinho
+      const alert = await this.alertCtrl.create({
+        header: 'Limpar carrinho?',
+        message: 'Seu carrinho contém itens de outro restaurante. Deseja limpar o carrinho e adicionar este item?',
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Limpar e Adicionar',
+            handler: () => {
+              this.cartService.clearCart();
+              this.addToCartConfirmed(item, quantity);
+            }
+          }
+        ]
+      });
+      await alert.present();
+    } else {
+      // Adicionar diretamente se não há conflito
+      this.addToCartConfirmed(item, quantity);
+    }
+  }
+
+  // Método final para adicionar ao carrinho após verificações
+  private addToCartConfirmed(item: MenuItem, quantity: number) {
+    const cartItem: CartItem = {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: quantity,
+      image: item.image,
+      restaurantId: this.restaurant.id,
+      restaurantName: this.restaurant.name,
+      notes: ''
+    };
+
+    this.cartService.addItem(cartItem);
+
+    this.toastCtrl.create({
+      message: `${quantity}x ${item.name} adicionado ao carrinho`,
+      duration: 2000,
+      position: 'bottom'
+    }).then(toast => toast.present());
+  }
+
+  // Método auxiliar para obter URL completa da imagem
+  getImageUrl(photoName: string | null): string {
+    if (!photoName) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/restaurant/${photoName}`;
+  }
+
+  getDishImageUrl(image: string | null): string {
+    if (!image) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/dishes/${image}`;
+  }
+
+  goToCart() {
+    this.router.navigate(['/consumer/cart']);
+  }
+
+  goBack() {
+    this.router.navigate(['/consumer/restaurants']);
   }
 }

@@ -31,12 +31,12 @@
     <!-- Restaurante -->
     <div class="restaurant-info">
       <ion-item lines="none">
-        <ion-thumbnail slot="start">
-          <img [src]="restaurant?.image" [alt]="restaurant?.name">
+        <ion-thumbnail slot="start" *ngIf="cartItems[0].image">
+          <img [src]="getItemImageUrl(cartItems[0].image)" alt="Restaurant">
         </ion-thumbnail>
         <ion-label>
           <h2>{{restaurant?.name}}</h2>
-          <p>{{restaurant?.deliveryTime}} min • {{restaurant?.deliveryFee | currency:'MZN'}}</p>
+          <p>Taxa de entrega: {{restaurant?.deliveryFee | currency:'MZN'}}</p>
         </ion-label>
       </ion-item>
     </div>
@@ -74,7 +74,7 @@
     <div class="notes-section">
       <ion-item>
         <ion-icon name="create-outline" slot="start"></ion-icon>
-        <ion-input 
+        <ion-input
           placeholder="Adicionar observações ao pedido"
           [(ngModel)]="orderNotes">
         </ion-input>
@@ -85,7 +85,7 @@
     <div class="coupon-section">
       <ion-item>
         <ion-icon name="ticket-outline" slot="start"></ion-icon>
-        <ion-input 
+        <ion-input
           placeholder="Adicionar cupom de desconto"
           [(ngModel)]="couponCode">
         </ion-input>
@@ -114,11 +114,17 @@
         <span>Total</span>
         <span>{{total | currency:'MZN'}}</span>
       </div>
+
+      <!-- Aviso de pedido mínimo -->
+      <div class="min-order-warning" *ngIf="!isMinOrderMet()">
+        <ion-icon name="alert-circle"></ion-icon>
+        <p>Adicione mais {{getRemainingForMinOrder() | currency:'MZN'}} para atingir o pedido mínimo</p>
+      </div>
     </div>
   </div>
 </ion-content>
 
-<!-- Footer com Botão de Finalizar -->
+<!-- Footer com Botão de Finalizar --> 
 <ion-footer *ngIf="cartItems.length > 0">
   <ion-toolbar>
     <div class="checkout-footer">
@@ -128,170 +134,14 @@
           <strong>{{total | currency:'MZN'}}</strong>
         </ion-text>
       </div>
-      <ion-button expand="block" (click)="checkout()">
-        Finalizar Pedido
-      </ion-button>
+      <div class="action-buttons">
+        <ion-button fill="outline" (click)="continueShopping()">
+          Continuar Comprando
+        </ion-button>
+        <ion-button expand="block" (click)="checkout()" [disabled]="!isMinOrderMet()">
+          Finalizar Pedido
+        </ion-button>
+      </div>
     </div>
   </ion-toolbar>
 </ion-footer>
-
-<!-- Estilos SCSS -->
-<style>
-.empty-cart {
-  text-align: center;
-  padding: 40px 20px;
-
-  ion-icon {
-    font-size: 64px;
-    color: var(--ion-color-medium);
-    margin-bottom: 16px;
-  }
-
-  h2 {
-    font-size: 20px;
-    margin: 0;
-    color: var(--ion-color-dark);
-  }
-
-  p {
-    color: var(--ion-color-medium);
-    margin: 8px 0 24px;
-  }
-
-  ion-button {
-    max-width: 200px;
-    margin: 0 auto;
-  }
-}
-
-.cart-content {
-  padding-bottom: 80px; // Espaço para o footer
-}
-
-.restaurant-info {
-  background: var(--ion-color-light);
-  padding: 8px 0;
-
-  ion-thumbnail {
-    --size: 60px;
-    
-    img {
-      border-radius: 8px;
-    }
-  }
-
-  h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-  }
-
-  p {
-    font-size: 14px;
-    color: var(--ion-color-medium);
-    margin: 4px 0 0;
-  }
-}
-
-.cart-item {
-  --padding-start: 8px;
-  --padding-end: 8px;
-
-  .item-quantity {
-    display: flex;
-    align-items: center;
-    margin-right: 16px;
-
-    ion-button {
-      --padding-start: 4px;
-      --padding-end: 4px;
-      height: 32px;
-    }
-
-    span {
-      width: 24px;
-      text-align: center;
-      font-weight: 500;
-    }
-  }
-
-  h3 {
-    font-size: 16px;
-    margin: 0;
-  }
-
-  p {
-    font-size: 14px;
-    color: var(--ion-color-medium);
-    margin: 4px 0;
-  }
-}
-
-.notes-section, .coupon-section {
-  padding: 8px 16px;
-  background: var(--ion-color-light);
-  margin-top: 16px;
-
-  ion-item {
-    --background: transparent;
-    --border-color: transparent;
-  }
-}
-
-.order-summary {
-  padding: 16px;
-  margin-top: 16px;
-
-  h3 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0 0 16px;
-  }
-
-  .summary-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 14px;
-    color: var(--ion-color-medium);
-
-    &.total {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--ion-color-dark);
-      border-top: 1px solid var(--ion-color-light);
-      padding-top: 12px;
-      margin-top: 12px;
-    }
-  }
-}
-
-.checkout-footer {
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: white;
-  box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-
-  .total-info {
-    display: flex;
-    flex-direction: column;
-
-    span {
-      font-size: 12px;
-      color: var(--ion-color-medium);
-    }
-
-    strong {
-      font-size: 18px;
-    }
-  }
-
-  ion-button {
-    margin: 0;
-    --padding-start: 24px;
-    --padding-end: 24px;
-  }
-}
-</style>

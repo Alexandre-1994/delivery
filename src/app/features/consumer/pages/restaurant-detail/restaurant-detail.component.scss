@@ -1,13 +1,50 @@
-.restaurant-banner {
+/* src/app/features/consumer/pages/restaurant-detail/restaurant-detail.component.scss */
+
+ion-badge {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  font-size: 10px;
+}
+
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+
+  ion-icon, ion-spinner {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 8px 0 16px;
+    font-size: 14px;
+    color: var(--ion-color-medium);
+  }
+}
+
+.restaurant-cover {
   position: relative;
+  height: 200px;
+  width: 100%;
   
   img {
     width: 100%;
-    height: 200px;
+    height: 100%;
     object-fit: cover;
   }
-
-  .restaurant-info {
+  
+  .restaurant-info-overlay {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -15,29 +52,29 @@
     padding: 20px;
     background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
     color: white;
-
+    
     h1 {
       margin: 0;
       font-size: 24px;
-      font-weight: bold;
+      font-weight: 600;
     }
-
+    
     p {
-      margin: 5px 0;
+      margin: 4px 0 8px;
       opacity: 0.9;
     }
-
-    .stats {
+    
+    .restaurant-stats {
       display: flex;
-      gap: 15px;
-      margin-top: 10px;
-
-      span {
+      gap: 16px;
+      margin-top: 8px;
+      
+      .stat-item {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
         font-size: 14px;
-
+        
         ion-icon {
           font-size: 16px;
         }
@@ -46,24 +83,239 @@
   }
 }
 
-.menu-items {
-  ion-thumbnail {
-    --size: 80px;
-    margin-right: 10px;
-  }
+.restaurant-menu {
+  padding: 16px 0;
+  
+  .menu-categories {
+    padding: 0 16px;
+    margin-bottom: 16px;
 
-  h2 {
-    font-weight: bold;
-    font-size: 16px;
+    ion-segment {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      
+      ion-segment-button {
+        --color: var(--ion-color-medium);
+        --color-checked: var(--ion-color-primary);
+        --indicator-color: var(--ion-color-primary);
+        min-width: 100px;
+        --border-style: none;
+      }
+    }
   }
-
-  p {
-    color: var(--ion-color-medium);
-    font-size: 14px;
+  
+  .menu-items {
+    .no-items {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--ion-color-medium);
+      
+      ion-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+      
+      h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+      }
+      
+      p {
+        margin: 8px 0 0;
+        font-size: 14px;
+      }
+    }
+    
+    .menu-item {
+      --padding-start: 16px;
+      --padding-end: 8px;
+      
+      ion-thumbnail {
+        --size: 80px;
+        --border-radius: 8px;
+        margin-right: 16px;
+        
+        img {
+          border-radius: 8px;
+          object-fit: cover;
+        }
+      }
+      
+      ion-label {
+        h2 {
+          font-size: 16px;
+          font-weight: 500;
+          margin-bottom: 4px;
+        }
+        
+        p {
+          color: var(--ion-color-medium);
+          font-size: 14px;
+          margin-bottom: 8px;
+          white-space: normal;
+          overflow: visible;
+          text-overflow: unset;
+        }
+        
+        .price {
+          font-weight: 600;
+          font-size: 16px;
+        }
+      }
+      
+      .item-actions {
+        display: flex;
+        flex-direction: column;
+        margin-left: auto;
+        
+        ion-button {
+          margin: 0;
+          height: 36px;
+          
+          ion-icon {
+            margin-right: 4px;
+          }
+          
+          ion-label {
+            font-size: 12px;
+          }
+        }
+        
+        .details-btn {
+          --color: var(--ion-color-medium);
+        }
+        
+        .add-btn {
+          --color: var(--ion-color-primary);
+        }
+      }
+    }
   }
+}
 
-  h3 {
-    font-weight: bold;
-    margin: 5px 0 0;
+/* Estilos para o Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  .modal-container {
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    
+    .modal-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      
+      h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      
+      ion-button {
+        margin: 0;
+        --padding-start: 4px;
+        --padding-end: 4px;
+        
+        ion-icon {
+          font-size: 24px;
+        }
+      }
+    }
+    
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      
+      .item-image {
+        width: 100%;
+        height: 200px;
+        margin-bottom: 16px;
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 8px;
+        }
+      }
+      
+      .item-details {
+        h3 {
+          margin: 0 0 8px;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--ion-color-dark);
+        }
+        
+        p {
+          margin: 0 0 16px;
+          font-size: 14px;
+          color: var(--ion-color-medium);
+        }
+        
+        .item-price, .total-price {
+          p {
+            color: var(--ion-color-primary);
+            font-size: 16px;
+            font-weight: 600;
+          }
+        }
+        
+        .quantity-selector {
+          margin-bottom: 16px;
+          
+          .quantity-controls {
+            display: flex;
+            align-items: center;
+            
+            ion-button {
+              --padding-start: 0;
+              --padding-end: 0;
+              
+              ion-icon {
+                font-size: 24px;
+              }
+            }
+            
+            .quantity {
+              width: 40px;
+              text-align: center;
+              font-size: 18px;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+    }
+    
+    .modal-footer {
+      padding: 16px;
+      border-top: 1px solid #eee;
+      
+      ion-button {
+        margin: 0;
+      }
+    }
   }
 }

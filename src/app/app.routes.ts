@@ -1,14 +1,28 @@
 import { Routes } from '@angular/router';
-import { RestaurantDetailComponent } from './features/consumer/pages/restaurant-detail/restaurant-detail.component';
+import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  // Auth routes
   {
-    path: '',
-    redirectTo: 'consumer/restaurants',
-    pathMatch: 'full'
+    path: 'auth',
+    children: [
+      {
+        path: 'login',
+        loadComponent: () => import('./features/auth/pages/login/login.component')
+          .then(m => m.LoginComponent)
+      },
+      // {
+      //   path: 'register',
+      //   loadComponent: () => import('./features/auth/pages/register/register.component')
+      //     .then(m => m.RegisterComponent)
+      // }
+    ]
   },
+
+  // Consumer routes
   {
     path: 'consumer',
+    canActivate: [AuthGuard],
     children: [
       {
         path: 'restaurants',
@@ -26,6 +40,11 @@ export const routes: Routes = [
           .then(m => m.CartComponent)
       },
       {
+        path: 'checkout',
+        loadComponent: () => import('./features/consumer/pages/checkout/checkout.component')
+          .then(m => m.CheckoutComponent)
+      },
+      {
         path: 'orders',
         loadComponent: () => import('./features/consumer/pages/orders/orders.component')
           .then(m => m.OrdersComponent)
@@ -38,8 +57,10 @@ export const routes: Routes = [
     ]
   },
 
+  // Delivery routes
   {
     path: 'delivery',
+    canActivate: [AuthGuard],
     children: [
       {
         path: '',
@@ -67,5 +88,16 @@ export const routes: Routes = [
           .then(m => m.ProfileComponent)
       }
     ]
+  },
+
+  // Redirects
+  {
+    path: '',
+    redirectTo: 'consumer/restaurants',
+    pathMatch: 'full'
+  },
+  {
+    path: '**',
+    redirectTo: 'consumer/restaurants'
   }
 ];

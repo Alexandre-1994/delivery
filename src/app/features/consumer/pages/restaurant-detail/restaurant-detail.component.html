@@ -1,261 +1,161 @@
-<!-- restaurant-detail.component.html -->
-<ion-header class="ion-no-border">
+<!-- src/app/features/consumer/pages/restaurant-detail/restaurant-detail.component.html -->
+
+<ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/consumer/restaurants" color="dark"></ion-back-button>
     </ion-buttons>
     <ion-title>
-      <ion-text color="dark">{{ restaurant?.name }}</ion-text>
+      <ion-text color="dark">{{ restaurant?.name || 'Detalhes' }}</ion-text>
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button routerLink="/consumer/cart">
+      <ion-button (click)="goToCart()">
         <ion-icon name="cart-outline" color="dark"></ion-icon>
-        <ion-badge color="danger" *ngIf="cartItems > 0">{{cartItems}}</ion-badge>
+        <ion-badge *ngIf="cartItems > 0" color="danger">{{ cartItems }}</ion-badge>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <!-- Banner e Informações do Restaurante -->
-  <div class="restaurant-banner">
-    <img [src]="restaurant?.image" [alt]="restaurant?.name">
-    <div class="restaurant-info">
-      <div class="main-info">
-        <h1>{{ restaurant?.name }}</h1>
-        <ion-badge color="success" *ngIf="restaurant?.isOpen">Aberto</ion-badge>
-        <ion-badge color="medium" *ngIf="!restaurant?.isOpen">Fechado</ion-badge>
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="isLoading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Carregando detalhes...</p>
+  </div>
+
+  <!-- Erro -->
+  <div class="error-container" *ngIf="errorMessage && !isLoading">
+    <ion-icon name="alert-circle-outline" color="danger"></ion-icon>
+    <h3>Ocorreu um erro</h3>
+    <p>{{ errorMessage }}</p>
+    <ion-button (click)="goBack()">Voltar</ion-button>
+  </div>
+
+  <!-- Conteúdo Principal -->
+  <div *ngIf="restaurant && !isLoading && !errorMessage">
+    <!-- Imagem do Restaurante -->
+    <div class="restaurant-cover">
+      <img [src]="getImageUrl(restaurant.cover || restaurant.photo)" [alt]="restaurant.name">
+      <div class="restaurant-info-overlay">
+        <h1>{{ restaurant.name }}</h1>
+        <p>{{ restaurant.neighborhood }}, {{ restaurant.city }}</p>
+        <div class="restaurant-stats">
+          <!-- Informações adicionais como avaliação, tempo de entrega, etc. -->
+          <div class="stat-item" *ngIf="restaurant.opening_time && restaurant.closing_time">
+            <ion-icon name="time-outline"></ion-icon>
+            <span>{{ restaurant.opening_time }} - {{ restaurant.closing_time }}</span>
+          </div>
+          <div class="stat-item">
+            <ion-icon name="call-outline"></ion-icon>
+            <span>{{ restaurant.phone }}</span>
+          </div>
+        </div>
       </div>
-      <p class="cuisine">{{ restaurant?.cuisine }}</p>
-      <div class="stats">
-        <span class="stat-item">
-          <ion-icon name="star" color="warning"></ion-icon>
-          {{ restaurant?.rating }}
-        </span>
-        <span class="stat-divider">•</span>
-        <span class="stat-item">
-          <ion-icon name="time-outline"></ion-icon>
-          {{ restaurant?.deliveryTime }} min
-        </span>
-        <span class="stat-divider">•</span>
-        <span class="stat-item">
-          <ion-icon name="bicycle-outline"></ion-icon>
-          {{ restaurant?.deliveryFee | currency:'MZN' }}
-        </span>
+    </div>
+
+    <!-- Menu do Restaurante -->
+    <div class="restaurant-menu">
+      <!-- Categorias do Menu -->
+      <div class="menu-categories">
+        <ion-segment [(ngModel)]="selectedCategory" (ionChange)="filterByCategory($event.detail.value!)" scrollable>
+          <!-- Opção "Todos" sempre disponível -->
+          <ion-segment-button value="all">
+            <ion-label>Todos</ion-label>
+          </ion-segment-button>
+
+          <!-- Categorias dinâmicas do menu -->
+          <ion-segment-button *ngFor="let category of menuCategories" [value]="category.id.toString()" [disabled]="category.id === 0">
+            <ion-label>{{ category.name }}</ion-label>
+          </ion-segment-button>
+        </ion-segment>
       </div>
-      <div class="min-order">
-        Pedido mínimo: {{ restaurant?.minOrder | currency:'MZN' }}
+
+      <!-- Itens do Menu -->
+      <div class="menu-items">
+        <!-- Quando não há itens -->
+        <div class="no-items" *ngIf="menuItems.length === 0">
+          <ion-icon name="restaurant-outline"></ion-icon>
+          <h3>Menu não disponível</h3>
+          <p>Este restaurante ainda não tem itens cadastrados</p>
+        </div>
+
+        <!-- Lista de Itens -->
+        <ion-list *ngIf="menuItems.length > 0">
+          <ion-item *ngFor="let item of getFilteredMenuItems()" class="menu-item">
+            <ion-thumbnail slot="start">
+              <img [src]="getDishImageUrl(item.image)" [alt]="item.name">
+            </ion-thumbnail>
+            <ion-label>
+              <h2>{{ item.name }}</h2>
+              <p>{{ item.description }}</p>
+              <ion-text color="primary" class="price">{{ item.price | currency:'AOA' }}</ion-text>
+            </ion-label>
+            <div class="item-actions">
+              <ion-button fill="clear" (click)="openItemDetails(item)" class="details-btn">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                <ion-label>Detalhes</ion-label>
+              </ion-button>
+              <ion-button fill="clear" (click)="addToCart(item)" class="add-btn">
+                <ion-icon name="add-circle"></ion-icon>
+                <ion-label>Adicionar</ion-label>
+              </ion-button>
+            </div>
+          </ion-item>
+        </ion-list>
       </div>
     </div>
   </div>
 
-  <!-- Menu Categories -->
-  <ion-segment [(ngModel)]="selectedCategory" 
-               (ionChange)="onCategoryChange($event)" 
-               mode="md" 
-               scrollable
-               class="category-segment">
-    <ion-segment-button *ngFor="let cat of categories" [value]="cat.id">
-      <ion-label>{{ cat.name }}</ion-label>
-    </ion-segment-button>
-  </ion-segment>
+  <!-- Modal de Detalhes do Item (implementado como um overlay customizado) -->
+  <div class="modal-overlay" *ngIf="showModal && selectedItem">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>{{ selectedItem.name }}</h2>
+        <ion-button fill="clear" (click)="closeModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
 
-  <!-- Menu Items -->
-  <div class="menu-items">
-    <ion-list>
-      <ion-item *ngFor="let item of filteredMenuItems" class="menu-item" [disabled]="!item.available">
-        <ion-thumbnail slot="start">
-          <img [src]="item.image" [alt]="item.name">
-        </ion-thumbnail>
-        <ion-label>
-          <div class="item-header">
-            <h2>{{ item.name }}</h2>
-            <div class="item-badges">
-              <ion-badge color="warning" *ngIf="item.popular">Popular</ion-badge>
-              <ion-badge color="danger" *ngIf="item.spicy">Picante</ion-badge>
+      <div class="modal-body">
+        <div class="item-image">
+          <img [src]="getDishImageUrl(selectedItem.image)" [alt]="selectedItem.name">
+        </div>
+
+        <div class="item-details">
+          <h3>Descrição</h3>
+          <p>{{ selectedItem.description }}</p>
+
+          <div class="item-price">
+            <h3>Preço</h3>
+            <p>{{ selectedItem.price | currency:'AOA' }}</p>
+          </div>
+
+          <div class="quantity-selector">
+            <h3>Quantidade</h3>
+            <div class="quantity-controls">
+              <ion-button fill="clear" (click)="decrementQuantity()">
+                <ion-icon name="remove-circle"></ion-icon>
+              </ion-button>
+              <span class="quantity">{{ itemQuantity }}</span>
+              <ion-button fill="clear" (click)="incrementQuantity()">
+                <ion-icon name="add-circle"></ion-icon>
+              </ion-button>
             </div>
           </div>
-          <p>{{ item.description }}</p>
-          <div class="item-footer">
-            <ion-text color="primary" class="price">
-              {{ formatPrice(item.price) }}
-            </ion-text>
-            <ion-button (click)="addToCart(item)" 
-                       fill="clear"
-                       [disabled]="!restaurant?.isOpen || !item.available">
-              <ion-icon name="add-circle-outline" slot="icon-only"></ion-icon>
-            </ion-button>
-          </div>
-        </ion-label>
-      </ion-item>
-    </ion-list>
 
-    <!-- Mensagem quando não há itens na categoria -->
-    <div class="no-items" *ngIf="filteredMenuItems.length === 0">
-      <ion-icon name="restaurant-outline"></ion-icon>
-      <p>Nenhum item disponível nesta categoria</p>
+          <div class="total-price">
+            <h3>Total</h3>
+            <p>{{ selectedItem.price * itemQuantity | currency:'AOA' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <ion-button expand="block" (click)="addToCartFromModal()">
+          Adicionar ao Carrinho
+        </ion-button>
+      </div>
     </div>
   </div>
 </ion-content>
-
-<!-- Estilos SCSS -->
-<style>
-.restaurant-banner {
-  position: relative;
-  
-  img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-  }
-
-  .restaurant-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px;
-    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-    color: white;
-
-    .main-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-
-      h1 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: bold;
-      }
-    }
-
-    .cuisine {
-      margin: 0;
-      opacity: 0.9;
-      font-size: 14px;
-    }
-
-    .stats {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-      font-size: 14px;
-
-      .stat-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .stat-divider {
-        opacity: 0.7;
-      }
-    }
-
-    .min-order {
-      margin-top: 8px;
-      font-size: 12px;
-      opacity: 0.8;
-    }
-  }
-}
-
-.category-segment {
-  padding: 10px;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  position: sticky;
-  top: 0;
-  z-index: 999;
-
-  ion-segment-button {
-    --color: var(--ion-color-medium);
-    --color-checked: var(--ion-color-primary);
-    --indicator-color: var(--ion-color-primary);
-    min-width: 120px;
-  }
-}
-
-.menu-items {
-  .menu-item {
-    --padding-start: 16px;
-    --padding-end: 16px;
-    --padding-top: 12px;
-    --padding-bottom: 12px;
-
-    ion-thumbnail {
-      --size: 80px;
-      margin-right: 16px;
-
-      img {
-        border-radius: 8px;
-        object-fit: cover;
-      }
-    }
-
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 4px;
-
-      h2 {
-        font-weight: 600;
-        font-size: 16px;
-        margin: 0;
-      }
-
-      .item-badges {
-        display: flex;
-        gap: 4px;
-      }
-    }
-
-    p {
-      color: var(--ion-color-medium);
-      font-size: 14px;
-      margin: 4px 0;
-    }
-
-    .item-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 8px;
-
-      .price {
-        font-weight: 600;
-        font-size: 16px;
-      }
-    }
-
-    &.item-disabled {
-      opacity: 0.5;
-    }
-  }
-}
-
-.no-items {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--ion-color-medium);
-
-  ion-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-  }
-
-  p {
-    margin: 0;
-    font-size: 16px;
-  }
-}
-
-ion-badge {
-  font-size: 12px;
-  padding: 4px 8px;
-}
-</style>

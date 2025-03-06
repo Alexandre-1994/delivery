@@ -1,10 +1,12 @@
+// TypeScript - Implementações que faltam
 import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, LoadingController, ToastController, AlertController } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { Geolocation } from '@capacitor/geolocation';
-import { interval, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { MapsLoaderService } from 'src/app/core/services/maps-loader.service';
+import { DeliveryService, Delivery } from '../../services/delivery.service';
+import { take } from 'rxjs/operators';
 
 declare var google: any;
 
@@ -43,7 +45,7 @@ interface CurrentDelivery {
   imports: [CommonModule, IonicModule]
 })
 export class CurrentDeliveryComponent implements OnInit, OnDestroy {
-  @ViewChild('map') mapElement!: ElementRef;
+  @ViewChild('map', { static: false }) mapElement!: ElementRef;
   
   map: any;
   directionsService: any;
@@ -53,23 +55,74 @@ export class CurrentDeliveryComponent implements OnInit, OnDestroy {
   remainingDistance: number = 0;
   locationWatchId: string | null = null;
   updateSubscription: Subscription | null = null;
+  deliverySubscription!: Subscription;
   isDetailsOpen: boolean = false;
   modalBreakpoint: number = 0.25;
   currentDelivery: CurrentDelivery | null = null;
 
   constructor(
     private router: Router,
-    private mapsLoader: MapsLoaderService
+    private mapsLoader: MapsLoaderService,
+    private deliveryService: DeliveryService,
+    private loadingCtrl: LoadingController,
+    private toastCtrl: ToastController,
+    private alertCtrl: AlertController
   ) {}
 
   async ngOnInit() {
     try {
-      this.loadMockDelivery();
+      await this.loadCurrentDelivery();
       await this.mapsLoader.loadGoogleMaps();
       await this.initializeMap();
-      await this.startTracking();
     } catch (error) {
       console.error('Erro na inicialização:', error);
+      this.showToast('Erro ao inicializar. Tente novamente.');
+    }
+  }
+
+  async initializeMap() {
+    // Verifica se o elemento do mapa está disponível
+    if (!this.mapElement) {
+      console.error('Elemento do mapa não encontrado');
+      return;
+    }
+
+    try {
+      // Opções padrão para o mapa
+      const mapOptions = {
+        zoom: 15,
+        center: { lat: -25.969, lng: 32.573 }, // Coordenadas padrão (ajuste conforme necessário)
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        disableDefaultUI: true
+      };
+
+      // Inicializa o mapa
+      this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
+      
+      // Inicializa serviços de direções
+      this.directionsService = new google.maps.DirectionsService();
+      this.directionsRenderer = new google.maps.DirectionsRenderer({
+        map: this.map,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#4285F4',
+          strokeWeight: 5
+        }
+      });
+
+      // Obtém a posição atual
+      await this.getCurrentPosition();
+      
+      // Inicia o rastreamento da localização
+      this.startTracking();
+      
+      // Calcula rota se tiver os endereços
+      if (this.currentDelivery) {
+        this.calculateRoute();
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar o mapa:', error);
+      this.showToast('Erro ao carregar o mapa');
     }
   }
 
@@ -78,229 +131,314 @@ export class CurrentDeliveryComponent implements OnInit, OnDestroy {
     if (this.updateSubscription) {
       this.updateSubscription.unsubscribe();
     }
-  }
-
-  // Métodos de dados mockados
-  loadMockDelivery() {
-    this.currentDelivery = {
-      id: '1',
-      orderNumber: 'OD123456',
-      restaurantName: 'Restaurante Tradicional',
-      restaurantAddress: 'Rua Principal, 123 - Centro',
-      customerName: 'João Silva',
-      deliveryAddress: 'Avenida Central, 456 - Bairro Novo',
-      status: 'accepted',
-      items: [
-        { id: 1, name: 'Mufete Tradicional', quantity: 1 },
-        { id: 2, name: 'Sumo de Múcua', quantity: 2 }
-      ],
-      timeline: {
-        accepted: new Date()
-      }
-    };
-  }
-
-  // Métodos de controle do modal
-  closeDetails() {
-    const modal = document.querySelector('ion-modal');
-    if (modal) {
-      modal.setCurrentBreakpoint(0.25);
+    if (this.deliverySubscription) {
+      this.deliverySubscription.unsubscribe();
     }
   }
 
-  // Métodos de status e UI
-  getStatusIcon(): string {
-    if (!this.currentDelivery) return 'ellipse';
-
-    switch (this.currentDelivery.status) {
-      case 'accepted': return 'checkmark-circle';
-      case 'collecting': return 'restaurant';
-      case 'delivering': return 'bicycle';
-      case 'delivered': return 'checkmark-done-circle';
-      default: return 'ellipse';
-    }
+  async getCurrentPosition(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.currentPosition = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          resolve(this.currentPosition);
+        },
+        (error) => {
+          console.error('Erro ao obter localização:', error);
+          reject(error);
+        },
+        { enableHighAccuracy: true }
+      );
+    });
   }
 
-  getStatusColor(): string {
-    if (!this.currentDelivery) return 'medium';
-
-    switch (this.currentDelivery.status) {
-      case 'accepted': return 'warning';
-      case 'collecting': return 'primary';
-      case 'delivering': return 'tertiary';
-      case 'delivered': return 'success';
-      default: return 'medium';
-    }
+  startTracking() {
+    this.locationWatchId = String(navigator.geolocation.watchPosition(
+      (position) => {
+        this.currentPosition = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        // Atualiza o mapa com a nova posição
+        if (this.map && this.currentDelivery) {
+          this.updateMapPosition();
+          this.calculateRoute();
+        }
+      },
+      (error) => {
+        console.error('Erro no rastreamento:', error);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    ));
   }
 
-  formatStatus(status: DeliveryStatus | undefined): string {
-    if (!status) return '';
+  updateMapPosition() {
+    if (!this.map || !this.currentPosition) return;
     
-    const statusMap: Record<DeliveryStatus, string> = {
-      'accepted': 'Pedido Aceito',
-      'collecting': 'Coletando no Restaurante',
-      'delivering': 'Em Rota de Entrega',
-      'delivered': 'Entregue'
-    };
-
-    return statusMap[status];
+    // Atualiza a posição do mapa
+    this.map.setCenter(this.currentPosition);
+    
+    // Cria ou atualiza o marcador do entregador
+    if (!this.deliveryMarker) {
+      this.deliveryMarker = new google.maps.Marker({
+        position: this.currentPosition,
+        map: this.map,
+        icon: {
+          url: 'assets/images/delivery-icon.png',
+          scaledSize: new google.maps.Size(40, 40)
+        }
+      });
+    } else {
+      this.deliveryMarker.setPosition(this.currentPosition);
+    }
   }
 
-  isStepActive(step: DeliveryStatus): boolean {
-    const statusOrder: DeliveryStatus[] = ['accepted', 'collecting', 'delivering', 'delivered'];
-    const currentIndex = statusOrder.indexOf(this.currentDelivery?.status || 'accepted');
+  deliveryMarker: any = null;
+  restaurantMarker: any = null;
+  customerMarker: any = null;
+
+  calculateRoute() {
+    if (!this.currentDelivery || !this.currentPosition) return;
+    
+    // Determina origem e destino com base no status atual
+    let origin, destination;
+    
+    if (this.currentDelivery.status === 'accepted' || this.currentDelivery.status === 'collecting') {
+      // Rota do entregador para o restaurante
+      origin = this.currentPosition;
+      destination = this.currentDelivery.restaurantAddress;
+    } else {
+      // Rota do restaurante para o cliente
+      origin = this.currentPosition;
+      destination = this.currentDelivery.deliveryAddress;
+    }
+
+    const request = {
+      origin: origin,
+      destination: destination,
+      travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    this.directionsService.route(request, (result: any, status: any) => {
+      if (status === google.maps.DirectionsStatus.OK) {
+        this.directionsRenderer.setDirections(result);
+        
+        // Atualiza tempo estimado e distância
+        const route = result.routes[0];
+        if (route && route.legs[0]) {
+          this.estimatedTime = Math.round(route.legs[0].duration.value / 60);
+          this.remainingDistance = parseFloat((route.legs[0].distance.value / 1000).toFixed(1));
+        }
+        
+        // Adiciona marcadores
+        this.addRouteMarkers();
+      } else {
+        console.error('Erro ao calcular rota:', status);
+      }
+    });
+  }
+
+  addRouteMarkers() {
+    if (!this.map || !this.currentDelivery) return;
+    
+    // Limpa marcadores anteriores
+    if (this.restaurantMarker) this.restaurantMarker.setMap(null);
+    if (this.customerMarker) this.customerMarker.setMap(null);
+    
+    // Geocode para obter coordenadas do restaurante
+    const geocoder = new google.maps.Geocoder();
+    
+    // Marcador do restaurante
+    geocoder.geocode({ address: this.currentDelivery.restaurantAddress }, (results: any, status: any) => {
+      if (status === google.maps.GeocoderStatus.OK && results[0]) {
+        this.restaurantMarker = new google.maps.Marker({
+          position: results[0].geometry.location,
+          map: this.map,
+          icon: {
+            url: 'assets/images/restaurant-icon.png',
+            scaledSize: new google.maps.Size(40, 40)
+          }
+        });
+      }
+    });
+    
+    // Marcador do cliente
+    geocoder.geocode({ address: this.currentDelivery.deliveryAddress }, (results: any, status: any) => {
+      if (status === google.maps.GeocoderStatus.OK && results[0]) {
+        this.customerMarker = new google.maps.Marker({
+          position: results[0].geometry.location,
+          map: this.map,
+          icon: {
+            url: 'assets/images/customer-icon.png',
+            scaledSize: new google.maps.Size(40, 40)
+          }
+        });
+      }
+    });
+  }
+
+  async loadCurrentDelivery() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Carregando entrega...'
+    });
+    await loading.present();
+
+    try {
+      this.deliverySubscription = this.deliveryService.getCurrentDelivery().subscribe(
+        delivery => {
+          if (delivery) {
+            this.mapDeliveryData(delivery);
+          } else {
+            this.router.navigate(['/delivery/available-orders']);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Erro ao carregar entrega:', error);
+      this.showToast('Erro ao carregar detalhes da entrega');
+      this.router.navigate(['/delivery/available-orders']);
+    } finally {
+      loading.dismiss();
+    }
+  }
+
+  mapDeliveryData(apiDelivery: Delivery) {
+    this.currentDelivery = {
+      id: apiDelivery.id,
+      orderNumber: apiDelivery.id,
+      restaurantName: apiDelivery.restaurant_name,
+      restaurantAddress: apiDelivery.restaurant_address,
+      customerName: apiDelivery.customer_name,
+      deliveryAddress: apiDelivery.customer_address,
+      status: this.mapApiStatusToAppStatus(apiDelivery.status),
+      items: apiDelivery.items || [],
+      timeline: { accepted: new Date() }
+    };
+
+    if (apiDelivery.updated_at) {
+      const updatedAt = new Date(apiDelivery.updated_at);
+      if (apiDelivery.status === 'collected') this.currentDelivery.timeline.collecting = updatedAt;
+      if (apiDelivery.status === 'delivering') this.currentDelivery.timeline.delivering = updatedAt;
+      if (apiDelivery.status === 'delivered') this.currentDelivery.timeline.delivered = updatedAt;
+    }
+  }
+
+  mapApiStatusToAppStatus(apiStatus: string): DeliveryStatus {
+    switch(apiStatus) {
+      case 'accepted': return 'accepted';
+      case 'collected': return 'collecting';
+      case 'delivering': return 'delivering';
+      case 'delivered': return 'delivered';
+      default: return 'accepted';
+    }
+  }
+
+  // MÉTODOS USADOS NO TEMPLATE QUE FALTAVAM
+  isStepActive(step: string): boolean {
+    if (!this.currentDelivery) return false;
+    
+    const statusOrder = ['accepted', 'collecting', 'delivering', 'delivered'];
+    const currentIndex = statusOrder.indexOf(this.currentDelivery.status);
     const stepIndex = statusOrder.indexOf(step);
-    return currentIndex >= stepIndex;
+    
+    return stepIndex <= currentIndex;
   }
 
   getStepTime(step: keyof DeliveryTimeline): Date | null {
-    return this.currentDelivery?.timeline[step] || null;
+    if (!this.currentDelivery || !this.currentDelivery.timeline) return null;
+    return this.currentDelivery.timeline[step] || null;
   }
 
   getNextActionText(): string {
-    switch(this.currentDelivery?.status) {
-      case 'accepted': return 'Cheguei ao Restaurante';
+    if (!this.currentDelivery) return 'Atualizar';
+    
+    switch(this.currentDelivery.status) {
+      case 'accepted': return 'Confirmar Coleta';
       case 'collecting': return 'Iniciar Entrega';
       case 'delivering': return 'Confirmar Entrega';
       case 'delivered': return 'Entrega Concluída';
-      default: return 'Próximo Passo';
-    }
-  }
-
-  // Métodos de ação
-  async updateDeliveryStatus() {
-    if (!this.currentDelivery) return;
-
-    const statusFlow: Record<DeliveryStatus, DeliveryStatus | undefined> = {
-      'accepted': 'collecting',
-      'collecting': 'delivering',
-      'delivering': 'delivered',
-      'delivered': undefined
-    };
-
-    const nextStatus = statusFlow[this.currentDelivery.status];
-    if (nextStatus) {
-      this.currentDelivery.status = nextStatus;
-      this.currentDelivery.timeline[nextStatus] = new Date();
-
-      if (nextStatus === 'delivered') {
-        setTimeout(() => {
-          this.router.navigate(['/delivery/available-orders']);
-        }, 2000);
-      }
+      default: return 'Atualizar';
     }
   }
 
   openMap(address: string | undefined) {
     if (!address) return;
-    console.log('Abrindo mapa para:', address);
+    
+    // Abre o Google Maps com o endereço
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    window.open(url, '_system');
   }
 
-  contactSupport() {
-    console.log('Contactando suporte...');
+  async contactSupport() {
+    const alert = await this.alertCtrl.create({
+      header: 'Contato de Suporte',
+      message: 'Entre em contato com nossa equipe pelo número: (84) 99999-9999',
+      buttons: ['OK']
+    });
+    await alert.present();
   }
 
-  // Métodos de mapa e localização
-  async initializeMap() {
+  async updateDeliveryStatus() {
+    if (!this.currentDelivery) return;
+
+    const loading = await this.loadingCtrl.create({
+      message: 'Atualizando status...'
+    });
+    await loading.present();
+
     try {
-      const coordinates = await Geolocation.getCurrentPosition();
-      
-      const mapOptions = {
-        zoom: 15,
-        center: {
-          lat: coordinates.coords.latitude,
-          lng: coordinates.coords.longitude
-        },
-        disableDefaultUI: true,
-        styles: []
-      };
+      let result;
+      const deliveryId = Number(this.currentDelivery.id);
 
-      this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
-      this.directionsService = new google.maps.DirectionsService();
-      this.directionsRenderer = new google.maps.DirectionsRenderer({
-        map: this.map,
-        suppressMarkers: true
-      });
+      switch(this.currentDelivery.status) {
+        case 'accepted':
+          result = await this.deliveryService.markAsCollected(deliveryId).pipe(take(1)).toPromise();
+          this.currentDelivery.status = 'collecting';
+          this.currentDelivery.timeline.collecting = new Date();
+          break;
+        case 'collecting':
+          // result = await this.deliveryService.markAsDelivering(deliveryId).pipe(take(1)).toPromise();
+          // this.currentDelivery.status = 'delivering';
+          // this.currentDelivery.timeline.delivering = new Date();
+          break;
+        case 'delivering':
+          result = await this.deliveryService.markAsDelivered(deliveryId).pipe(take(1)).toPromise();
+          this.currentDelivery.status = 'delivered';
+          this.currentDelivery.timeline.delivered = new Date();
+          
+          setTimeout(() => {
+            this.showToast('Entrega concluída com sucesso!');
+            this.router.navigate(['/delivery/available-orders']);
+          }, 2000);
+          break;
+      }
 
-      await this.updateRoute();
+      this.showToast('Status atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao inicializar mapa:', error);
+      console.error('Erro ao atualizar status:', error);
+      this.showToast('Erro ao atualizar status da entrega');
+    } finally {
+      loading.dismiss();
     }
   }
 
-  async startTracking() {
-    try {
-      this.locationWatchId = await Geolocation.watchPosition({
-        enableHighAccuracy: true,
-        timeout: 1000,
-        maximumAge: 3000
-      }, (position, err) => {
-        if (err) {
-          console.error('Erro ao obter localização:', err);
-          return;
-        }
-        this.updateDeliveryLocation(position);
-      });
-
-      this.updateSubscription = interval(30000).subscribe(() => {
-        this.updateRoute();
-      });
-    } catch (error) {
-      console.error('Erro ao iniciar rastreamento:', error);
-    }
+  async showToast(message: string) {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 2000,
+      position: 'bottom'
+    });
+    toast.present();
   }
 
   stopTracking() {
     if (this.locationWatchId) {
-      Geolocation.clearWatch({ id: this.locationWatchId });
+      navigator.geolocation.clearWatch(Number(this.locationWatchId));
+      this.locationWatchId = null;
     }
-    if (this.updateSubscription) {
-      this.updateSubscription.unsubscribe();
-    }
-  }
-
-  async updateDeliveryLocation(position: any) {
-    this.currentPosition = {
-      lat: position.coords.latitude,
-      lng: position.coords.longitude
-    };
-    await this.updateRoute();
-  }
-
-  async updateRoute() {
-    if (!this.currentPosition || !this.currentDelivery) return;
-
-    try {
-      const destination = this.currentDelivery.status === 'collecting' 
-        ? this.currentDelivery.restaurantAddress 
-        : this.currentDelivery.deliveryAddress;
-
-      const request = {
-        origin: this.currentPosition,
-        destination: destination,
-        travelMode: 'DRIVING'
-      };
-
-      const result = await this.directionsService.route(request);
-      this.directionsRenderer.setDirections(result);
-
-      const route = result.routes[0].legs[0];
-      this.estimatedTime = Math.round(route.duration.value / 60);
-      this.remainingDistance = parseFloat((route.distance.value / 1000).toFixed(1));
-    } catch (error) {
-      console.error('Erro ao atualizar rota:', error);
-    }
-  }
-
-  createCustomMarker(position: any, icon: string, title: string) {
-    return new google.maps.Marker({
-      position: position,
-      map: this.map,
-      icon: {
-        url: icon,
-        scaledSize: new google.maps.Size(32, 32)
-      },
-      title: title
-    });
   }
 }
