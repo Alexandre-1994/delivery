@@ -23,7 +23,7 @@ export interface AddressResponse {
   providedIn: 'root'
 })
 export class AddressService {
-  private apiUrl = `${environment.apiUrl}/addresses`;
+  private apiUrl = `${environment.apiUrl}/customer/address/list`;
 
   constructor(private http: HttpClient) {}
 

@@ -63,7 +63,7 @@
           <ion-segment-button value="all">
             <ion-label>Todos</ion-label>
           </ion-segment-button>
-          
+
           <!-- Categorias dinâmicas do menu -->
           <ion-segment-button *ngFor="let category of menuCategories" [value]="category.id.toString()" [disabled]="category.id === 0">
             <ion-label>{{ category.name }}</ion-label>
@@ -84,7 +84,7 @@
         <ion-list *ngIf="menuItems.length > 0">
           <ion-item *ngFor="let item of getFilteredMenuItems()" class="menu-item">
             <ion-thumbnail slot="start">
-              <img [src]="getDishImageUrl(item.photo)" [alt]="item.name">
+              <img [src]="getDishImageUrl(item.image)" [alt]="item.name">
             </ion-thumbnail>
             <ion-label>
               <h2>{{ item.name }}</h2>
@@ -116,21 +116,21 @@
           <ion-icon name="close-outline"></ion-icon>
         </ion-button>
       </div>
-      
+
       <div class="modal-body">
         <div class="item-image">
-          <img [src]="getDishImageUrl(selectedItem.photo)" [alt]="selectedItem.name">
+          <img [src]="getDishImageUrl(selectedItem.image)" [alt]="selectedItem.name">
         </div>
-        
+
         <div class="item-details">
           <h3>Descrição</h3>
           <p>{{ selectedItem.description }}</p>
-          
+
           <div class="item-price">
             <h3>Preço</h3>
             <p>{{ selectedItem.price | currency:'AOA' }}</p>
           </div>
-          
+
           <div class="quantity-selector">
             <h3>Quantidade</h3>
             <div class="quantity-controls">
@@ -143,14 +143,14 @@
               </ion-button>
             </div>
           </div>
-          
+
           <div class="total-price">
             <h3>Total</h3>
             <p>{{ selectedItem.price * itemQuantity | currency:'AOA' }}</p>
           </div>
         </div>
       </div>
-      
+
       <div class="modal-footer">
         <ion-button expand="block" (click)="addToCartFromModal()">
           Adicionar ao Carrinho
