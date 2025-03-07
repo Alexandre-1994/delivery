@@ -3,18 +3,34 @@ import { CommonModule } from '@angular/common';
 import { IonicModule, LoadingController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { register } from 'swiper/element/bundle';
-import 'swiper/element/bundle';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { RestaurantService, Restaurant, Category, Dish } from '../../services/restaurant.service';
-import { AuthService } from '../../services/auth.service'; // Import AuthService
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { addIcons } from 'ionicons';
+import {
+  locationOutline,
+  cartOutline,
+  alertCircleOutline,
+  searchOutline,
+  home,
+  receipt,
+  person
+} from 'ionicons/icons';
+import { AuthService } from 'src/app/core/services/auth.service';
 
-// Registrar o componente Swiper
-register(); 
+// Registrar os ícones
+addIcons({
+  'location-outline': locationOutline,
+  'cart-outline': cartOutline,
+  'alert-circle-outline': alertCircleOutline,
+  'search-outline': searchOutline,
+  'home': home,
+  'receipt': receipt,
+  'person': person
+});
 
 @Component({
   selector: 'app-restaurants',
@@ -61,11 +77,11 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     private restaurantService: RestaurantService,
     private loadingCtrl: LoadingController,
     private router: Router,
-    private authService: AuthService // Inject AuthService
+    private authService: AuthService
   ) {
     // Check authentication
-    if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login']);
+    if (!this.authService.isAuthenticated) {
+      this.router.navigate(['/auth/login']);
     }
   }
 

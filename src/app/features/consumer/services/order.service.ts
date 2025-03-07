@@ -1,66 +1,89 @@
 // src/app/features/consumer/services/order.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { CartItem } from './cart.service';
 
-export interface OrderCreate {
-  restaurant_id: number;
-  items: {
-    id: number;
-    quantity: number;
-    notes?: string;
-  }[];
-  subtotal: number;
-  delivery_fee: number;
-  discount: number;
-  total: number;
-  notes?: string;
-  coupon_code?: string;
-  // Adicione outros campos necessários para a API
+export interface OrderItem {
+  dish_id: number;
+  quantity: number;
+  price: number;
+}
 
-  
+export interface OrderCreate {
+  address_id: number;
+  payment_method: number;
+  items: OrderItem[];
+  total: number;
+}
+
+export interface OrderHistory {
+  tracking_id: number;
+  restaurant_name: string;
+  tracking_number: string;
+  status: string;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  dish_name: string;
+  dish_image: string;
+  dish_description: string;
+  quantity: number;
+  unit_price: string;
+  total_price: number;
+  order_created_at: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class OrderService {
-    private apiUrl = 'http://127.0.0.1:8000/api/customer/my-orders/all';
+  private apiUrl = `${environment.apiUrl}/customer`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
+
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders(this.authService.getAuthHeaders());
+  }
 
   // Criar novo pedido
   createOrder(orderData: OrderCreate): Observable<any> {
-    return this.http.post(`${this.apiUrl}/customer/order/store`, orderData);
+    const headers = this.getHeaders();
+    return this.http.post(`${this.apiUrl}/order/store`, orderData, { headers });
   }
 
   // Obter todos os pedidos do usuário
-  getOrders(status: string = 'all'): Observable<any> {
-    return this.http.get(`${this.apiUrl}/customer/my-orders/${status}`);
+  getOrders(): Observable<OrderHistory[]> {
+    const headers = this.getHeaders();
+    return this.http.get<OrderHistory[]>(`${this.apiUrl}/my-orders/all`, { headers });
   }
 
   // Obter detalhes de um pedido específico
-  getOrderDetails(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/customer/order/confirm/${id}`);
+  getOrderDetails(orderId: number): Observable<any> {
+    const headers = this.getHeaders();
+    return this.http.get(`${this.apiUrl}/order/show/${orderId}`, { headers });
   }
 
   // Preparar dados do carrinho para o formato esperado pela API
-  prepareOrderData(cartItems: CartItem[], restaurant: any, subtotal: number, deliveryFee: number, discount: number, total: number, notes?: string, couponCode?: string): OrderCreate {
+  prepareOrderData(
+    cartItems: CartItem[], 
+    addressId: number, 
+    paymentMethodId: number, 
+    total: number
+  ): OrderCreate {
     return {
-      restaurant_id: restaurant.id,
+      address_id: addressId,
+      payment_method: paymentMethodId,
       items: cartItems.map(item => ({
-        id: item.id,
+        dish_id: item.id,
         quantity: item.quantity,
-        notes: item.notes
+        price: item.price
       })),
-      subtotal,
-      delivery_fee: deliveryFee,
-      discount,
-      total,
-      notes,
-      coupon_code: couponCode
+      total
     };
   }
 }

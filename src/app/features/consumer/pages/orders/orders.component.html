@@ -1,248 +1,155 @@
 <!-- src/app/features/consumer/pages/orders/orders.component.html -->
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-buttons slot="start">
-      <ion-back-button  defaultHref="/consumer/restaurants" color="dark"></ion-back-button>
-    </ion-buttons>
     <ion-title>
       <ion-text color="dark">Meus Pedidos</ion-text>
     </ion-title>
   </ion-toolbar>
-
-  <!-- Segmento para alternar entre pedidos ativos e histórico -->
-  <ion-toolbar>
-    <ion-segment [(ngModel)]="selectedSegment" (ionChange)="segmentChanged($event)">
-      <ion-segment-button value="active">
-        <ion-label>Ativos</ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="history">
-        <ion-label>Histórico</ion-label>
-      </ion-segment-button>
-    </ion-segment>
-  </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <!-- Pedidos Ativos -->
-  <div *ngIf="selectedSegment === 'active'">
-    <!-- Card para pedido em andamento -->
-    <ion-card *ngFor="let order of activeOrders" class="order-card">
-      <ion-card-header>
-        <div class="order-header">
-          <ion-text color="primary">
-            <h2>{{order.restaurantName}}</h2>
-          </ion-text>
-          <ion-badge [color]="getStatusColor(order.status)">
-            {{order.status}}
-          </ion-badge>
-        </div>
-      </ion-card-header>
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
 
-      <ion-card-content>
-        <!-- Progresso do pedido -->
-        <div class="order-progress">
-          <div class="progress-item" [class.active]="isStepCompleted(order, 'confirmed')">
-            <ion-icon name="checkmark-circle"></ion-icon>
-            <span>Confirmado</span>
-          </div>
-          <div class="progress-line"></div>
-          <div class="progress-item" [class.active]="isStepCompleted(order, 'preparing')">
-            <ion-icon name="restaurant"></ion-icon>
-            <span>Preparando</span>
-          </div>
-          <div class="progress-line"></div>
-          <div class="progress-item" [class.active]="isStepCompleted(order, 'delivering')">
-            <ion-icon name="bicycle"></ion-icon>
-            <span>A caminho</span>
-          </div>
-          <div class="progress-line"></div>
-          <div class="progress-item" [class.active]="isStepCompleted(order, 'delivered')">
-            <ion-icon name="checkmark-done-circle"></ion-icon>
-            <span>Entregue</span>
-          </div>
-        </div>
-
-        <!-- Detalhes do pedido -->
-        <div class="order-details">
-          <div class="detail-item">
-            <ion-icon name="time-outline"></ion-icon>
-            <span>Previsão: {{order.estimatedDeliveryTime | date:'HH:mm'}}</span>
-          </div>
-          <div class="detail-item">
-            <ion-icon name="receipt-outline"></ion-icon>
-            <span>Pedido #{{order.orderNumber}}</span>
-          </div>
-          <div class="detail-item">
-            <ion-icon name="cash-outline"></ion-icon>
-            <span>{{order.total | currency:'MZN'}}</span>
-          </div>
-        </div>
-
-        <!-- Botões de ação -->
-        <div class="order-actions">
-          <ion-button fill="clear" (click)="trackOrder(order)">
-            <ion-icon name="location-outline" slot="start"></ion-icon>
-            Acompanhar
-          </ion-button>
-          <ion-button fill="clear" (click)="viewOrderDetails(order)">
-            <ion-icon name="eye-outline" slot="start"></ion-icon>
-            Detalhes
-          </ion-button>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Mensagem quando não há pedidos ativos -->
-    <div class="no-orders" *ngIf="activeOrders.length === 0">
-      <ion-icon name="restaurant-outline"></ion-icon>
-      <h3>Nenhum pedido ativo</h3>
-      <p>Que tal fazer um pedido agora?</p>
-      <ion-button expand="block" routerLink="/consumer/restaurants">
-        Ver Restaurantes
-      </ion-button>
-    </div>
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="ion-padding ion-text-center">
+    <ion-spinner></ion-spinner>
+    <p>Carregando pedidos...</p>
   </div>
 
-  <!-- Histórico de Pedidos -->
-  <div *ngIf="selectedSegment === 'history'">
-    <ion-list>
-      <ion-item *ngFor="let order of orderHistory" detail (click)="viewOrderDetails(order)">
+  <!-- Error -->
+  <div *ngIf="error" class="ion-padding ion-text-center">
+    <ion-icon name="alert-circle-outline" color="danger" size="large"></ion-icon>
+    <p>{{ error }}</p>
+    <ion-button (click)="loadOrders()" fill="clear">
+      Tentar novamente
+    </ion-button>
+  </div>
+
+  <!-- No Orders -->
+  <div *ngIf="!isLoading && !error && orders.length === 0" class="ion-padding ion-text-center">
+    <ion-icon name="receipt-outline" color="medium" size="large"></ion-icon>
+    <p>Você ainda não tem pedidos</p>
+    <ion-button expand="block" routerLink="/consumer/restaurants">
+      Ver Restaurantes
+    </ion-button>
+  </div>
+
+  <!-- Orders List -->
+  <ion-list *ngIf="!isLoading && !error && orders.length > 0">
+    <ion-item-group *ngFor="let order of orders">
+      <ion-item-divider sticky>
         <ion-label>
-          <h2>{{order.restaurantName}}</h2>
-          <p>{{order.date | date:'dd/MM/yyyy HH:mm'}}</p>
-          <ion-text color="medium">
-            <p>{{order.items.length}} itens • {{order.total | currency:'MZN'}}</p>
-          </ion-text>
+          <h2>{{ order.restaurant_name }}</h2>
+          <p>Pedido #{{ order.tracking_number }}</p>
         </ion-label>
-        <ion-badge slot="end" [color]="getStatusColor(order.status)">
-          {{order.status}}
-        </ion-badge>
-      </ion-item>
-    </ion-list>
+        <ion-chip [color]="getStatusColor(order.status)" slot="end">
+          {{ order.status }}
+        </ion-chip>
+      </ion-item-divider>
 
-    <!-- Mensagem quando não há histórico -->
-    <div class="no-orders" *ngIf="orderHistory.length === 0">
-      <ion-icon name="receipt-outline"></ion-icon>
-      <h3>Nenhum pedido no histórico</h3>
-      <p>Seus pedidos anteriores aparecerão aqui</p>
-    </div>
-  </div>
+      <ion-item>
+        <ion-thumbnail slot="start">
+          <img [src]="'assets/dishes/' + order.dish_image" [alt]="order.dish_name">
+        </ion-thumbnail>
+        <ion-label>
+          <h3>{{ order.dish_name }}</h3>
+          <p>{{ order.dish_description }}</p>
+          <p>
+            Quantidade: {{ order.quantity }} x {{ formatCurrency(+order.unit_price) }}
+          </p>
+        </ion-label>
+        <ion-note slot="end" color="primary">
+          {{ formatCurrency(order.total_price) }}
+        </ion-note>
+      </ion-item>
+
+      <ion-item lines="none">
+        <ion-label>
+          <p>
+            <ion-icon name="calendar-outline"></ion-icon>
+            {{ formatDate(order.order_created_at) }}
+          </p>
+          <p *ngIf="order.shipped_at">
+            <ion-icon name="bicycle-outline"></ion-icon>
+            Enviado: {{ formatDate(order.shipped_at) }}
+          </p>
+          <p *ngIf="order.delivered_at">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Entregue: {{ formatDate(order.delivered_at) }}
+          </p>
+        </ion-label>
+      </ion-item>
+    </ion-item-group>
+  </ion-list>
 </ion-content>
 
-<!-- Estilo SCSS -->
 <style>
 .order-card {
   margin: 16px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-
-  .order-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-  }
 }
 
-.order-progress {
+.order-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 20px 0;
-
-  .progress-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    color: var(--ion-color-medium);
-
-    ion-icon {
-      font-size: 24px;
-      margin-bottom: 4px;
-    }
-
-    span {
-      font-size: 12px;
-      text-align: center;
-    }
-
-    &.active {
-      color: var(--ion-color-primary);
-    }
-  }
-
-  .progress-line {
-    flex: 1;
-    height: 2px;
-    background: var(--ion-color-medium);
-    margin: 0 8px;
-    margin-bottom: 20px;
-  }
+  padding: 16px;
 }
 
-.order-details {
-  margin: 16px 0;
-
-  .detail-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    color: var(--ion-color-medium);
-
-    ion-icon {
-      margin-right: 8px;
-      font-size: 20px;
-    }
-
-    span {
-      font-size: 14px;
-    }
-  }
+.order-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.order-actions {
-  display: flex;
-  justify-content: space-around;
-  border-top: 1px solid var(--ion-color-light);
-  padding-top: 12px;
-  margin-top: 12px;
+ion-chip {
+  margin: 0;
+}
+
+ion-thumbnail {
+  --size: 80px;
+  margin-right: 16px;
+}
+
+ion-note {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+ion-item-divider {
+  --background: var(--ion-color-light);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+}
+
+ion-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
 }
 
 .no-orders {
   text-align: center;
   padding: 40px 20px;
-  color: var(--ion-color-medium);
 
   ion-icon {
-    font-size: 48px;
+    font-size: 64px;
+    color: var(--ion-color-medium);
     margin-bottom: 16px;
   }
 
-  h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 500;
-  }
-
   p {
-    margin: 8px 0 20px;
-    font-size: 14px;
+    color: var(--ion-color-medium);
+    margin-bottom: 24px;
   }
 
   ion-button {
     max-width: 200px;
     margin: 0 auto;
   }
-}
-
-ion-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
 }
 </style>

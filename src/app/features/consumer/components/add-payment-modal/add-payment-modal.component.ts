@@ -13,11 +13,7 @@ import { PaymentService } from '../../services/payment.service';
 export class AddPaymentModalComponent {
   paymentForm: FormGroup;
   isSubmitting = false;
-  paymentTypes = [
-    { value: 'money', label: 'Dinheiro' },
-    { value: 'mpesa', label: 'M-Pesa' },
-    { value: 'emola', label: 'E-mola' }
-  ];
+  selectedType: 'mpesa' | 'card' | 'emola' = 'mpesa';
 
   constructor(
     private modalCtrl: ModalController,
@@ -25,10 +21,14 @@ export class AddPaymentModalComponent {
     private paymentService: PaymentService
   ) {
     this.paymentForm = this.fb.group({
-      type: ['', [Validators.required]],
-      number: [''],
-      holder_name: [''],
-      is_default: [false]
+      type: ['mpesa', [Validators.required]],
+      title: ['', [Validators.required]],
+      is_default: [false],
+      is_active: [true],
+      details: this.fb.group({
+        account_name: ['', [Validators.required]],
+        phone_number: ['', [Validators.required]]
+      })
     });
   }
 
@@ -40,11 +40,20 @@ export class AddPaymentModalComponent {
     this.isSubmitting = true;
 
     try {
-      const response = await this.paymentService.addPaymentMethod(this.paymentForm.value).toPromise();
+      const formValue = this.paymentForm.value;
+      const paymentData = {
+        type: formValue.type,
+        title: formValue.title,
+        is_default: formValue.is_default,
+        is_active: formValue.is_active,
+        details: formValue.details
+      };
+
+      const response = await this.paymentService.addPaymentMethod(paymentData).toPromise();
       if (response) {
         this.modalCtrl.dismiss({
           added: true,
-          payment: response.data
+          payment: response
         });
       }
     } catch (error) {
@@ -59,15 +68,39 @@ export class AddPaymentModalComponent {
   }
 
   onPaymentTypeChange() {
-    const type = this.paymentForm.get('type')?.value;
-    if (type === 'money') {
-      this.paymentForm.get('number')?.clearValidators();
-      this.paymentForm.get('holder_name')?.clearValidators();
-    } else {
-      this.paymentForm.get('number')?.setValidators([Validators.required]);
-      this.paymentForm.get('holder_name')?.setValidators([Validators.required]);
+    this.selectedType = this.paymentForm.get('type')?.value;
+    this.paymentForm.get('title')?.setValue('');
+    
+    // Atualizar o título baseado no tipo selecionado
+    const accountName = this.paymentForm.get('details.account_name')?.value;
+    if (accountName) {
+      this.updateTitle(accountName);
     }
-    this.paymentForm.get('number')?.updateValueAndValidity();
-    this.paymentForm.get('holder_name')?.updateValueAndValidity();
+  }
+
+  updateTitle(accountName: string) {
+    const type = this.paymentForm.get('type')?.value;
+    let title = '';
+    
+    switch (type) {
+      case 'mpesa':
+        title = `M-PESA - ${accountName}`;
+        break;
+      case 'emola':
+        title = `E-MOLA - ${accountName}`;
+        break;
+      case 'card':
+        title = `Cartão - ${accountName}`;
+        break;
+    }
+    
+    this.paymentForm.get('title')?.setValue(title);
+  }
+
+  onAccountNameChange() {
+    const accountName = this.paymentForm.get('details.account_name')?.value;
+    if (accountName) {
+      this.updateTitle(accountName);
+    }
   }
 }

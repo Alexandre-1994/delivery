@@ -1,43 +1,79 @@
 // src/app/features/consumer/services/payment.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { AuthService } from 'src/app/core/services/auth.service';
 
-export interface PaymentMethod {
+interface MpesaDetails {
   id: number;
-  type: 'money' | 'mpesa' | 'emola' | 'bank_card';
-  number?: string;
-  holder_name?: string;
-  last4?: string;
-  is_default: boolean;
+  payment_method_id: number;
+  phone_number: string;
+  account_name: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface PaymentMethodResponse {
-  data: PaymentMethod[];
+interface CardDetails {
+  // Adicione os campos necessários para cartão quando implementar
+}
+
+interface EmolaDetails {
+  // Adicione os campos necessários para Emola quando implementar
+}
+
+export interface PaymentMethod {
+  data: any;
+  id: number;
+  customer_id: number;
+  type: 'mpesa' | 'card' | 'emola';
+  title: string;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  card_details: CardDetails | null;
+  emola_details: EmolaDetails | null;
+  mpesa_details: MpesaDetails | null;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentService {
-  private apiUrl = `${environment.apiUrl}/payment-methods`;
+  private apiUrl = `${environment.apiUrl}/customer/payments`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
-  getPaymentMethods(): Observable<PaymentMethodResponse> {
-    return this.http.get<PaymentMethodResponse>(this.apiUrl);
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('auth_token');
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
   }
 
-  addPaymentMethod(payment: Partial<PaymentMethod>): Observable<{data: PaymentMethod}> {
-    return this.http.post<{data: PaymentMethod}>(this.apiUrl, payment);
+  getPaymentMethods(): Observable<PaymentMethod[]> {
+    return this.http.get<PaymentMethod[]>(`${this.apiUrl}/list`, { headers: this.getHeaders() });
   }
 
-  updatePaymentMethod(id: number, payment: Partial<PaymentMethod>): Observable<{data: PaymentMethod}> {
-    return this.http.put<{data: PaymentMethod}>(`${this.apiUrl}/${id}`, payment);
+  addPaymentMethod(paymentMethod: Partial<PaymentMethod>): Observable<PaymentMethod> {
+    return this.http.post<PaymentMethod>(`${this.apiUrl}/store`, paymentMethod, { headers: this.getHeaders() });
+  }
+
+  updatePaymentMethod(id: number, paymentMethod: Partial<PaymentMethod>): Observable<PaymentMethod> {
+    return this.http.put<PaymentMethod>(`${this.apiUrl}/update/${id}`, paymentMethod, { headers: this.getHeaders() });
   }
 
   deletePaymentMethod(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/delete/${id}`, { headers: this.getHeaders() });
+  }
+
+  setDefaultPaymentMethod(id: number): Observable<PaymentMethod> {
+    return this.http.put<PaymentMethod>(`${this.apiUrl}/set-default/${id}`, {}, { headers: this.getHeaders() });
   }
 }

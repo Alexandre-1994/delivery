@@ -5,7 +5,14 @@
 export const environment = {
   production: false,
   apiUrl: 'http://127.0.0.1:8000/api',
-  googleMapsApiKey: 'AIzaSyD58s1mxcpR_aahFsPS1_MiWuwxmU-R4as' 
+  googleMapsApiKey: 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg', // Chave de teste do Google Maps
+  endpoints: {
+    addresses: '/addresses',
+    paymentMethods: '/customer/payment-methods',
+    orders: '/customer/orders',
+    restaurants: '/restaurants',
+    cart: '/customer/cart'
+  }
 };
 
 /*

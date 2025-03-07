@@ -1,9 +1,10 @@
 // src/app/features/consumer/services/restaurant.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { AuthService } from 'src/app/core/services/auth.service';
 
 export interface Restaurant {
   id: number;
@@ -54,7 +55,14 @@ export class RestaurantService {
   private apiUrl = environment.apiUrl;
   private _cachedHomeData: HomeData | undefined = undefined;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
+
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders(this.authService.getAuthHeaders());
+  }
 
   getAllData(): Observable<HomeData> {
     // Se já temos dados em cache e não queremos recarregar
@@ -65,7 +73,7 @@ export class RestaurantService {
       });
     }
   
-    return this.http.get<HomeData>(`${this.apiUrl}/customer/all`)
+    return this.http.get<HomeData>(`${this.apiUrl}/customer/all`, { headers: this.getHeaders() })
       .pipe(
         tap(data => {
           // Salvar em cache
@@ -93,13 +101,14 @@ export class RestaurantService {
   }
 
   getRestaurantDetails(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/customer/restaurant/details/${id}`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/customer/restaurant/details/${id}`, { headers: this.getHeaders() }).pipe(
       map(response => {
         // Adequar se sua API retornar um formato diferente
         return response.data || response;
       })
     );
   }
+
   clearCache() {
     this._cachedHomeData = undefined;
   }

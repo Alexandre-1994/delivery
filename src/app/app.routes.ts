@@ -2,57 +2,44 @@ import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  // Auth routes
+  {
+    path: '',
+    redirectTo: 'auth/login',
+    pathMatch: 'full'
+  },
   {
     path: 'auth',
-    children: [
-      {
-        path: 'login',
-        loadComponent: () => import('./features/auth/pages/login/login.component')
-          .then(m => m.LoginComponent)
-      },
-      // {
-      //   path: 'register',
-      //   loadComponent: () => import('./features/auth/pages/register/register.component')
-      //     .then(m => m.RegisterComponent)
-      // }
-    ]
+    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
-
-  // Consumer routes
   {
     path: 'consumer',
+    loadComponent: () => import('./features/consumer/consumer-tabs/consumer-tabs.component').then(m => m.ConsumerTabsComponent),
     canActivate: [AuthGuard],
     children: [
       {
+        path: '',
+        redirectTo: 'restaurants',
+        pathMatch: 'full'
+      },
+      {
         path: 'restaurants',
-        loadComponent: () => import('./features/consumer/pages/restaurants/restaurants.component')
-          .then(m => m.RestaurantsComponent)
+        loadComponent: () => import('./features/consumer/pages/restaurants/restaurants.component').then(m => m.RestaurantsComponent)
       },
       {
         path: 'restaurant/:id',
-        loadComponent: () => import('./features/consumer/pages/restaurant-detail/restaurant-detail.component')
-          .then(m => m.RestaurantDetailComponent)
-      },
-      {
-        path: 'cart',
-        loadComponent: () => import('./features/consumer/pages/cart/cart.component')
-          .then(m => m.CartComponent)
-      },
-      {
-        path: 'checkout',
-        loadComponent: () => import('./features/consumer/pages/checkout/checkout.component')
-          .then(m => m.CheckoutComponent)
+        loadComponent: () => import('./features/consumer/pages/restaurant-detail/restaurant-detail.component').then(m => m.RestaurantDetailComponent)
       },
       {
         path: 'orders',
-        loadComponent: () => import('./features/consumer/pages/orders/orders.component')
-          .then(m => m.OrdersComponent)
+        loadComponent: () => import('./features/consumer/pages/orders/orders.component').then(m => m.OrdersComponent)
+      },
+      {
+        path: 'cart',
+        loadComponent: () => import('./features/consumer/pages/cart/cart.component').then(m => m.CartComponent)
       },
       {
         path: 'profile',
-        loadComponent: () => import('./features/consumer/pages/profile/profile.component')
-          .then(m => m.ProfileComponent)
+        loadComponent: () => import('./features/consumer/pages/profile/profile.component').then(m => m.ProfileComponent)
       }
     ]
   },
@@ -92,12 +79,7 @@ export const routes: Routes = [
 
   // Redirects
   {
-    path: '',
-    redirectTo: 'consumer/restaurants',
-    pathMatch: 'full'
-  },
-  {
     path: '**',
-    redirectTo: 'consumer/restaurants'
+    redirectTo: 'auth/login'
   }
 ];

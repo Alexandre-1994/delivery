@@ -1,0 +1,41 @@
+<ion-content>
+  <div class="ion-padding">
+    <ion-title>Métodos de Pagamento</ion-title>
+
+    <div *ngIf="isLoading" class="ion-text-center ion-padding">
+      <ion-spinner></ion-spinner>
+    </div>
+
+    <div *ngIf="error" class="ion-text-center ion-padding">
+      <ion-text color="danger">
+        {{ error }}
+      </ion-text>
+    </div>
+
+    <ion-list *ngIf="!isLoading && !error">
+      <ion-item *ngFor="let method of paymentMethods">
+        <ion-icon [name]="getPaymentMethodIcon(method.type)" slot="start"></ion-icon>
+        <ion-label>
+          <h2>{{ method.title }}</h2>
+          <p>{{ getPaymentMethodDetails(method) }}</p>
+        </ion-label>
+        <ion-toggle 
+          slot="end" 
+          [checked]="method.is_default"
+          (ionChange)="setDefaultPaymentMethod(method.id)"
+        ></ion-toggle>
+      </ion-item>
+
+      <ion-item *ngIf="paymentMethods.length === 0">
+        <ion-label class="ion-text-center">
+          Nenhum método de pagamento cadastrado
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+    <ion-button expand="block" class="ion-margin-top">
+      <ion-icon name="add-outline" slot="start"></ion-icon>
+      Adicionar Método de Pagamento
+    </ion-button>
+  </div>
+</ion-content> 
