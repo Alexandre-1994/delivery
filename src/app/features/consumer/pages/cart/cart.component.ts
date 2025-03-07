@@ -30,7 +30,7 @@ export class CartComponent implements OnInit, OnDestroy {
   orderNotes: string = '';
   couponCode: string = '';
   discount: number = 0;
-  
+
   private cartSubscription: Subscription | null = null;
 
   constructor(
@@ -44,7 +44,7 @@ export class CartComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.cartSubscription = this.cartService.getItems().subscribe(items => {
       this.cartItems = items;
-      
+
       // Se tivermos itens, extrair informações do restaurante
       if (items.length > 0) {
         this.restaurant = {
@@ -58,7 +58,7 @@ export class CartComponent implements OnInit, OnDestroy {
       }
     });
   }
-  
+
   ngOnDestroy() {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
@@ -67,7 +67,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
   // Getters para cálculos
   get subtotal(): number {
-    return this.cartItems.reduce((total, item) => 
+    return this.cartItems.reduce((total, item) =>
       total + (item.price * item.quantity), 0);
   }
 
@@ -110,7 +110,7 @@ export class CartComponent implements OnInit, OnDestroy {
         }
       ]
     });
-    
+
     await alert.present();
   }
 
@@ -136,7 +136,7 @@ export class CartComponent implements OnInit, OnDestroy {
         }
       ]
     });
-    
+
     await alert.present();
   }
 
@@ -240,8 +240,8 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   // Helper para imagens
-  getItemImageUrl(photoName: string | null): string {
-    if (!photoName) return 'assets/placeholder-food.jpg';
-    return `http://127.0.0.1:8000/storage/dishes/${photoName}`;
+  getItemImageUrl(image: string | null): string {
+    if (!image) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/dishes/${image}`;
   }
 }

@@ -36,7 +36,7 @@ export interface Dish {
   name: string;
   price: number;
   description: string;
-  photo: string;
+  image: string;
   // outras propriedades do prato
 }
 
@@ -64,7 +64,7 @@ export class RestaurantService {
         observer.complete();
       });
     }
-  
+
     return this.http.get<HomeData>(`${this.apiUrl}/customer/all`)
       .pipe(
         tap(data => {

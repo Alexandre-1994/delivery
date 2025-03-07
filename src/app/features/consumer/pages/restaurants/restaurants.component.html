@@ -21,8 +21,8 @@
   </ion-toolbar>
 
   <ion-toolbar>
-    <ion-searchbar 
-      placeholder="Buscar restaurantes ou pratos" 
+    <ion-searchbar
+      placeholder="Buscar restaurantes ou pratos"
       [(ngModel)]="searchTerm"
       (ionChange)="search()">
     </ion-searchbar>
@@ -33,7 +33,7 @@
   <ion-refresher slot="fixed" (ionRefresh)="refreshData($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-  
+
   <!-- Loader -->
   <div class="loading-container" *ngIf="isLoading">
     <ion-spinner name="crescent"></ion-spinner>
@@ -52,12 +52,12 @@
     <div class="categories-section" *ngIf="categories.length > 0">
       <h2 class="section-title">Categorias</h2>
       <div class="categories-list">
-        <ion-chip 
+        <ion-chip
           [color]="selectedCategory === 'all' ? 'primary' : 'medium'"
           (click)="filterByCategory('all')">
           <ion-label>Todos</ion-label>
         </ion-chip>
-        <ion-chip 
+        <ion-chip
           *ngFor="let category of categories"
           [color]="selectedCategory === category.name ? 'primary' : 'medium'"
           (click)="filterByCategory(category.name)">
@@ -70,15 +70,15 @@
     <div class="categories-section" *ngIf="categories.length === 0 && restaurants.length > 0">
       <h2 class="section-title">Cidades</h2>
       <div class="categories-list">
-        <ion-chip 
+        <ion-chip
           [color]="selectedCategory === 'all' ? 'primary' : 'medium'"
           (click)="filterByCategory('all')">
           <ion-label>Todas</ion-label>
         </ion-chip>
-        
+
         <!-- Extraindo cidades únicas dos restaurantes -->
         <ng-container *ngIf="restaurants.length > 0">
-          <ion-chip 
+          <ion-chip
             *ngFor="let city of getUniqueCities()"
             [color]="selectedCategory === city ? 'primary' : 'medium'"
             (click)="filterByCategory(city)">
@@ -91,12 +91,12 @@
     <!-- Pratos Populares -->
     <div class="top-dishes-section" *ngIf="topDishes && topDishes.length > 0">
       <h2 class="section-title">Pratos Populares</h2>
-      
+
       <!-- Usando swiper em vez de ion-slides (depreciado) -->
       <swiper-container [slidesPerView]="2.5" [spaceBetween]="10" [freeMode]="true" class="dishes-slides">
         <swiper-slide *ngFor="let dish of topDishes">
           <ion-card class="dish-card" (click)="goToDish(dish)">
-            <img [src]="getDishImageUrl(dish.photo)" [alt]="dish.name">
+            <img [src]="getDishImageUrl(dish.image)" [alt]="dish.name">
             <div class="dish-info">
               <h3>{{dish.name}}</h3>
               <p class="dish-price">{{dish.price | currency:'AOA':'symbol':'1.0-0'}}</p>

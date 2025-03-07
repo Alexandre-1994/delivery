@@ -31,8 +31,8 @@
     <!-- Restaurante -->
     <div class="restaurant-info">
       <ion-item lines="none">
-        <ion-thumbnail slot="start" *ngIf="cartItems[0].photo">
-          <img [src]="getItemImageUrl(cartItems[0].photo)" alt="Restaurant">
+        <ion-thumbnail slot="start" *ngIf="cartItems[0].image">
+          <img [src]="getItemImageUrl(cartItems[0].image)" alt="Restaurant">
         </ion-thumbnail>
         <ion-label>
           <h2>{{restaurant?.name}}</h2>
@@ -74,7 +74,7 @@
     <div class="notes-section">
       <ion-item>
         <ion-icon name="create-outline" slot="start"></ion-icon>
-        <ion-input 
+        <ion-input
           placeholder="Adicionar observações ao pedido"
           [(ngModel)]="orderNotes">
         </ion-input>
@@ -85,7 +85,7 @@
     <div class="coupon-section">
       <ion-item>
         <ion-icon name="ticket-outline" slot="start"></ion-icon>
-        <ion-input 
+        <ion-input
           placeholder="Adicionar cupom de desconto"
           [(ngModel)]="couponCode">
         </ion-input>

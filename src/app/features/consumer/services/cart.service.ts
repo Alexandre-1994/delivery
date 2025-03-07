@@ -7,7 +7,7 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  photo: string;
+  image: string;
   restaurantId: number;
   restaurantName: string;
   notes?: string;
@@ -27,7 +27,7 @@ export class CartService {
     if (savedCart) {
       this.items = JSON.parse(savedCart);
       this.cartItemsSubject.next(this.items);
-      
+
       // Se temos itens, definir o restaurante atual
       if (this.items.length > 0) {
         this.restaurantIdSubject.next(this.items[0].restaurantId);
@@ -64,7 +64,7 @@ export class CartService {
     }
 
     const existingItemIndex = this.items.findIndex(i => i.id === item.id);
-    
+
     if (existingItemIndex > -1) {
       // Atualizar a quantidade se o item já existe
       this.items[existingItemIndex].quantity += item.quantity;
@@ -75,7 +75,7 @@ export class CartService {
 
     // Salvar restaurante atual
     this.restaurantIdSubject.next(item.restaurantId);
-    
+
     // Atualizar o subject e localStorage
     this.updateCart();
     return true;
@@ -96,12 +96,12 @@ export class CartService {
 
   removeItem(itemId: number): void {
     this.items = this.items.filter(item => item.id !== itemId);
-    
+
     // Se removermos o último item, resetar o restaurante atual
     if (this.items.length === 0) {
       this.restaurantIdSubject.next(null);
     }
-    
+
     this.updateCart();
   }
 
