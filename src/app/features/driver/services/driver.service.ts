@@ -231,6 +231,60 @@ export interface CurrentDeliveryResponse {
   delivery: CurrentDelivery;
 }
 
+export interface HistoryDeliveryDish {
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  image: string;
+  restaurant_id: number;
+}
+
+export interface HistoryDeliveryRestaurant {
+  id: number;
+  name: string;
+  street: string;
+  phone: string;
+  addressLat: string;
+  addressLng: string;
+  neighborhood: string;
+  city: string;
+  province: string;
+}
+
+export interface HistoryDeliveryCustomer {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+}
+
+export interface HistoryDeliveryOrderItem {
+  id: number;
+  quantity: number;
+  price: string;
+  status: string;
+  dish: HistoryDeliveryDish;
+  restaurant: HistoryDeliveryRestaurant;
+  order: {
+    id: number;
+    customer_id: number;
+    total_price: string;
+    payment_method: string;
+    customer: HistoryDeliveryCustomer;
+  };
+}
+
+export interface HistoryDelivery {
+  id: number;
+  order_item_id: number;
+  tracking_number: string;
+  status: string;
+  pickup_time: string | null;
+  delivery_time: string | null;
+  order_item: HistoryDeliveryOrderItem;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -254,8 +308,8 @@ export class DriverService {
     });
   }
 
-  getDeliveryHistory(): Observable<DeliveryOrder[]> {
-    return this.http.get<DeliveryOrder[]>(`${this.apiUrl}/customer/driver/delivery-history`, {
+  getDeliveryHistory(): Observable<HistoryDelivery[]> {
+    return this.http.get<HistoryDelivery[]>(`${this.apiUrl}/customer/driver/history-delivery`, {
       headers: this.authService.getAuthHeaders()
     });
   }

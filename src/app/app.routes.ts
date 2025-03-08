@@ -94,8 +94,22 @@ export const routes: Routes = [
 
   {
     path: 'driver',
-    loadChildren: () => import('./features/driver/driver.routes').then(m => m.DRIVER_ROUTES),
-    canActivate: [DriverGuard]
+    loadComponent: () => import('./features/driver/pages/tabs/tabs.component').then(m => m.DriverTabsComponent),
+    children: [
+      {
+        path: 'orders',
+        loadComponent: () => import('./features/driver/pages/orders/orders.component').then(m => m.OrdersComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/driver/pages/profile/profile.component').then(m => m.ProfileComponent)
+      },
+      {
+        path: '',
+        redirectTo: 'orders',
+        pathMatch: 'full'
+      }
+    ]
   },
 
   // Redirects

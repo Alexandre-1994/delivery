@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { RouterModule, Router } from '@angular/router';
-import { DriverService, CurrentDelivery, DeliveryOrder } from '../../services/driver.service';
+import { DriverService, CurrentDelivery, DeliveryOrder, HistoryDelivery } from '../../services/driver.service';
 import { FormsModule } from '@angular/forms';
 import { Browser } from '@capacitor/browser';
 
@@ -12,11 +12,6 @@ import { Browser } from '@capacitor/browser';
     <ion-header>
       <ion-toolbar color="primary">
         <ion-title>Pedidos</ion-title>
-        <ion-buttons slot="end">
-          <ion-button routerLink="/driver/profile">
-            <ion-icon name="person-outline"></ion-icon>
-          </ion-button>
-        </ion-buttons>
       </ion-toolbar>
       <ion-toolbar>
         <ion-segment [(ngModel)]="selectedSegment" (ionChange)="segmentChanged()">
@@ -204,30 +199,32 @@ import { Browser } from '@capacitor/browser';
         <ion-item-sliding *ngFor="let delivery of completedOrders">
           <ion-item>
             <ion-label>
-              <h2>Pedido #{{ delivery.tracking.tracking_number }}</h2>
+              <h2>Pedido #{{ delivery.tracking_number }}</h2>
               <p>
                 <ion-icon name="restaurant-outline"></ion-icon>
-                {{ delivery.restaurant.name }}
+                {{ delivery.order_item.restaurant.name }}
               </p>
               <p>
                 <ion-icon name="location-outline"></ion-icon>
-                {{ delivery.restaurant.address || 'Endereço não disponível' }}
+                {{ delivery.order_item.restaurant.street }}, 
+                {{ delivery.order_item.restaurant.neighborhood }}, 
+                {{ delivery.order_item.restaurant.city }}
               </p>
               <p>
                 <ion-icon name="cash-outline"></ion-icon>
-                {{ formatCurrency(delivery.item.price) }}
+                {{ formatCurrency(delivery.order_item.price) }}
               </p>
               <p>
                 <ion-icon name="fast-food-outline"></ion-icon>
-                {{ delivery.item.dish_name }} ({{ delivery.item.quantity }}x)
+                {{ delivery.order_item.dish.name }} ({{ delivery.order_item.quantity }}x)
               </p>
-              <p *ngIf="delivery.customer">
+              <p>
                 <ion-icon name="person-outline"></ion-icon>
-                {{ delivery.customer.name }}
+                {{ delivery.order_item.order.customer.name }}
               </p>
               <p>
                 <ion-icon name="calendar-outline"></ion-icon>
-                {{ formatDate(delivery.tracking.estimated_delivery_time) }}
+                {{ formatDate(delivery.delivery_time) }}
               </p>
             </ion-label>
             <ion-chip color="success" slot="end">
@@ -296,7 +293,7 @@ import { Browser } from '@capacitor/browser';
 export class OrdersComponent implements OnInit {
   availableOrders: DeliveryOrder[] = [];
   activeOrders: CurrentDelivery[] = [];
-  completedOrders: CurrentDelivery[] = [];
+  completedOrders: HistoryDelivery[] = [];
   selectedSegment = 'available';
   isLoading = false;
   error: string | null = null;
@@ -320,24 +317,22 @@ export class OrdersComponent implements OnInit {
       if (this.selectedSegment === 'available') {
         const response = await this.driverService.getAvailableOrders().toPromise();
         this.availableOrders = response || [];
+        this.activeOrders = [];
+        this.completedOrders = [];
+      } else if (this.selectedSegment === 'completed') {
+        const response = await this.driverService.getDeliveryHistory().toPromise();
+        this.completedOrders = response || [];
+        this.availableOrders = [];
+        this.activeOrders = [];
       } else {
         const response = await this.driverService.getCurrentDelivery().toPromise();
         if (response?.delivery) {
-          // Se tiver uma entrega atual, verificar o status
           if (['awaiting-collection', 'accepted', 'picked-up', 'in-transit'].includes(response.delivery.tracking.status)) {
             this.activeOrders = [response.delivery];
-            this.completedOrders = [];
-          } else if (response.delivery.tracking.status === 'delivered') {
-            this.activeOrders = [];
-            this.completedOrders = [response.delivery];
-          } else {
-            this.activeOrders = [];
-            this.completedOrders = [];
           }
-        } else {
-          this.activeOrders = [];
-          this.completedOrders = [];
         }
+        this.availableOrders = [];
+        this.completedOrders = [];
       }
     } catch (error) {
       this.error = 'Erro ao carregar pedidos. Tente novamente.';
