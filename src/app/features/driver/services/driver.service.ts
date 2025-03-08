@@ -270,7 +270,7 @@ export class DriverService {
   }
 
   acceptDelivery(orderId: number): Observable<AcceptDeliveryResponse> {
-    return this.http.post<AcceptDeliveryResponse>(
+    return this.http.put<AcceptDeliveryResponse>(
       `${this.apiUrl}/customer/accept/delivery/${orderId}`,
       {},
       { headers: this.authService.getAuthHeaders() }
