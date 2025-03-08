@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { DriverGuard } from './core/guards/driver.guard';
 
 export const routes: Routes = [
   {
@@ -44,6 +45,16 @@ export const routes: Routes = [
       {
         path: 'profile',
         loadComponent: () => import('./features/consumer/pages/profile/profile.component').then(m => m.ProfileComponent)
+      },
+      {
+        path: 'delivery',
+        loadComponent: () => import('./features/driver/pages/orders/orders.component').then(m => m.OrdersComponent),
+        canActivate: [DriverGuard]
+      },
+      {
+        path: 'delivery/:id',
+        loadComponent: () => import('./features/driver/pages/delivery-detail/delivery-detail.component').then(m => m.DeliveryDetailComponent),
+        canActivate: [DriverGuard]
       }
     ]
   },
@@ -79,6 +90,12 @@ export const routes: Routes = [
           .then(m => m.ProfileComponent)
       }
     ]
+  },
+
+  {
+    path: 'driver',
+    loadChildren: () => import('./features/driver/driver.routes').then(m => m.DRIVER_ROUTES),
+    canActivate: [DriverGuard]
   },
 
   // Redirects

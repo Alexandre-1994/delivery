@@ -18,6 +18,12 @@ import { AuthService } from '../../../../core/services/auth.service';
     </ion-header>
 
     <ion-content class="ion-padding">
+      <div class="login-header ion-text-center">
+        <img src="assets/logo.png" alt="Logo" class="logo">
+        <h1>Bem-vindo ao Delivery</h1>
+        <p>Faça login para continuar</p>
+      </div>
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <ion-list>
           <ion-item>
@@ -54,17 +60,37 @@ import { AuthService } from '../../../../core/services/auth.service';
     </ion-content>
   `,
   styles: [`
-    ion-content {
-      --background: var(--ion-color-light);
+    .login-header {
+      margin: 32px 0;
+      text-align: center;
     }
-    
+
+    .logo {
+      width: 120px;
+      height: auto;
+      margin-bottom: 24px;
+    }
+
+    .login-header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+
+    .login-header p {
+      margin: 8px 0 0;
+      color: var(--ion-color-medium);
+      font-size: 16px;
+    }
+
     ion-list {
-      background: var(--ion-color-light);
+      background: transparent;
       padding: 0;
     }
 
     ion-item {
-      --background: var(--ion-color-light);
+      --background: transparent;
       margin-bottom: 16px;
     }
 
@@ -106,8 +132,16 @@ export class LoginComponent {
       this.isLoading = true;
       
       this.authService.login(this.loginForm.value).subscribe({
-        next: () => {
-          this.router.navigate(['/consumer/restaurants']);
+        next: async (user) => {
+          const toast = await this.toastCtrl.create({
+            message: user.is_driver === 1 ? 
+              'Bem-vindo! Você está logado como entregador.' : 
+              'Bem-vindo! Você está logado como cliente.',
+            duration: 3000,
+            position: 'bottom',
+            color: 'success'
+          });
+          toast.present();
         },
         error: async (error) => {
           console.error('Erro no login:', error);

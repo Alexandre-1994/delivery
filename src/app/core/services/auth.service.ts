@@ -10,6 +10,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  is_driver: number;
   // Adicione outros campos conforme necessário
 }
 
@@ -113,16 +114,19 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.token && response.user) {
-            // Salvar dados com expiração
             this.saveAuthData(response.token, response.user);
 
-            // Redirecionar após login
+            // Redirecionar baseado no tipo de usuário
             const returnUrl = this.getReturnUrl();
             if (returnUrl) {
               this.router.navigateByUrl(returnUrl);
               this.clearReturnUrl();
             } else {
-              this.router.navigate(['/consumer/restaurants']);
+              if (response.user.is_driver === 1) {
+                this.router.navigate(['/driver/orders']);
+              } else {
+                this.router.navigate(['/consumer/restaurants']);
+              }
             }
           }
         }),
@@ -245,5 +249,10 @@ export class AuthService {
 
   setReturnUrl(url: string): void {
     localStorage.setItem('returnUrl', url);
+  }
+
+  isDriver(): boolean {
+    const user = this.currentUserSubject.value;
+    return user ? user.is_driver === 1 : false;
   }
 }
