@@ -4,6 +4,7 @@ import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { RouterModule, Router } from '@angular/router';
 import { DriverService, CurrentDelivery, DeliveryOrder } from '../../services/driver.service';
 import { FormsModule } from '@angular/forms';
+import { Browser } from '@capacitor/browser';
 
 @Component({
   selector: 'app-driver-orders',
@@ -437,16 +438,16 @@ export class OrdersComponent implements OnInit {
         },
         {
           text: 'Confirmar',
-          handler: () => this.completeDelivery(delivery.tracking.id)
+          handler: () => this.completeDelivery(delivery)
         }
       ]
     });
     await alert.present();
   }
 
-  async completeDelivery(trackingId: number) {
+  async completeDelivery(delivery: CurrentDelivery) {
     try {
-      await this.driverService.completeDelivery(trackingId).toPromise();
+      await this.driverService.completeDelivery(delivery.item.id).toPromise();
       this.showToast('Entrega concluída com sucesso!', 'success');
       this.loadOrders();
     } catch (error) {
@@ -525,13 +526,19 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-  openMaps(lat: string | null, lng: string | null) {
+  async openMaps(lat: string | null, lng: string | null) {
     if (!lat || !lng) {
       this.showToast('Coordenadas não disponíveis para navegação', 'danger');
       return;
     }
 
-    const destination = `${lat},${lng}`;
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destination}`, '_blank');
+    try {
+      const destination = `${lat},${lng}`;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
+      await Browser.open({ url });
+    } catch (error) {
+      console.error('Erro ao abrir navegação:', error);
+      this.showToast('Erro ao abrir navegação. Tente novamente.', 'danger');
+    }
   }
 } 
