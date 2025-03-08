@@ -165,20 +165,21 @@ import { FormsModule } from '@angular/forms';
                       Confirmar Coleta no Restaurante
                     </ion-button>
 
-                    <ion-button *ngIf="delivery.tracking.status === 'accepted'" 
-                              expand="block"
-                              color="warning"
-                              (click)="confirmCollectOrder(delivery)">
-                      <ion-icon name="restaurant-outline" slot="start"></ion-icon>
-                      Confirmar Coleta no Restaurante
-                    </ion-button>
-
-                    <ion-button *ngIf="delivery.tracking.status === 'picked-up'" 
+                    <ion-button *ngIf="delivery.tracking.status === 'in-transit'" 
                               expand="block"
                               color="success"
                               (click)="confirmCompleteDelivery(delivery)">
                       <ion-icon name="flag-outline" slot="start"></ion-icon>
                       Confirmar Entrega ao Cliente
+                    </ion-button>
+
+                    <!-- Botão de Navegação -->
+                    <ion-button *ngIf="delivery.tracking.status === 'in-transit' && delivery.customer.lat && delivery.customer.lng" 
+                              expand="block"
+                              color="secondary"
+                              (click)="openMaps(delivery.customer.lat, delivery.customer.lng)">
+                      <ion-icon name="navigate-outline" slot="start"></ion-icon>
+                      Navegar até Cliente
                     </ion-button>
                   </div>
                 </ion-card-content>
@@ -322,7 +323,7 @@ export class OrdersComponent implements OnInit {
         const response = await this.driverService.getCurrentDelivery().toPromise();
         if (response?.delivery) {
           // Se tiver uma entrega atual, verificar o status
-          if (['awaiting-collection', 'accepted', 'picked-up'].includes(response.delivery.tracking.status)) {
+          if (['awaiting-collection', 'accepted', 'picked-up', 'in-transit'].includes(response.delivery.tracking.status)) {
             this.activeOrders = [response.delivery];
             this.completedOrders = [];
           } else if (response.delivery.tracking.status === 'delivered') {
@@ -475,6 +476,7 @@ export class OrdersComponent implements OnInit {
       case 'accepted':
         return 'primary';
       case 'picked-up':
+      case 'in-transit':
         return 'warning';
       case 'delivered':
         return 'success';
@@ -492,7 +494,8 @@ export class OrdersComponent implements OnInit {
       case 'accepted':
         return 'Aceito';
       case 'picked-up':
-        return 'Em Entrega';
+      case 'in-transit':
+        return 'Em Trânsito';
       case 'delivered':
         return 'Entregue';
       case 'cancelled':

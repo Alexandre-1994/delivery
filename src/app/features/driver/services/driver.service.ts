@@ -280,14 +280,14 @@ export class DriverService {
   collectDelivery(trackingId: number): Observable<CollectDeliveryResponse> {
     return this.http.put<CollectDeliveryResponse>(
       `${this.apiUrl}/customer/collect/delivery/${trackingId}`,
-      {},
+      { status: 'in-transit' },
       { headers: this.authService.getAuthHeaders() }
     );
   }
 
   completeDelivery(trackingId: number): Observable<CompleteDeliveryResponse> {
     return this.http.put<CompleteDeliveryResponse>(
-      `${this.apiUrl}/customer/accept/complete/delivery/${trackingId}`,
+      `${this.apiUrl}/customer/complete/delivery/${trackingId}`,
       {},
       { headers: this.authService.getAuthHeaders() }
     );
