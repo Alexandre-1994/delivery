@@ -1,74 +1,62 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ModalController } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrderService, OrderHistory } from '../../services/order.service';
+import { OrderTrackingComponent } from '../../components/order-tracking/order-tracking.component';
 import { addIcons } from 'ionicons';
 import {
-  receiptOutline,
-  alertCircleOutline,
-  calendarOutline,
-  bicycleOutline,
-  checkmarkCircleOutline,
-  timeOutline,
-  cartOutline,
-  restaurantOutline,
   locationOutline,
-  callOutline,
-  personOutline,
-  homeOutline
+  timeOutline,
+  restaurantOutline,
+  bicycleOutline,
+  checkmarkOutline,
+  closeOutline,
+  alertCircleOutline,
+  refreshOutline,
+  calendarOutline,
+  cashOutline,
+  cardOutline,
+  flagOutline,
+  homeOutline,
+  fastFoodOutline
 } from 'ionicons/icons';
 
 // Registrar os ícones
 addIcons({
-  'receipt-outline': receiptOutline,
-  'alert-circle-outline': alertCircleOutline,
-  'calendar-outline': calendarOutline,
-  'bicycle-outline': bicycleOutline,
-  'checkmark-circle-outline': checkmarkCircleOutline,
-  'time-outline': timeOutline,
-  'cart-outline': cartOutline,
-  'restaurant-outline': restaurantOutline,
   'location-outline': locationOutline,
-  'call-outline': callOutline,
-  'person-outline': personOutline,
-  'home-outline': homeOutline
+  'time-outline': timeOutline,
+  'restaurant-outline': restaurantOutline,
+  'bicycle-outline': bicycleOutline,
+  'checkmark-outline': checkmarkOutline,
+  'close-outline': closeOutline,
+  'alert-circle-outline': alertCircleOutline,
+  'refresh-outline': refreshOutline,
+  'calendar-outline': calendarOutline,
+  'cash-outline': cashOutline,
+  'card-outline': cardOutline,
+  'flag-outline': flagOutline,
+  'home-outline': homeOutline,
+  'fast-food-outline': fastFoodOutline
 });
-
-interface OrderItem {
-  id: number;
-  name: string;
-  quantity: number;
-  price: number;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  restaurantName: string;
-  status: 'pending' | 'confirmed' | 'preparing' | 'delivering' | 'delivered' | 'cancelled';
-  items: OrderItem[];
-  total: number;
-  date: Date;
-  estimatedDeliveryTime: Date;
-  deliveryAddress: string;
-  paymentMethod: string;
-}
 
 @Component({
   selector: 'app-orders',
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterModule, FormsModule]
+  imports: [CommonModule, IonicModule, RouterModule, FormsModule, OrderTrackingComponent]
 })
 export class OrdersComponent implements OnInit {
   orders: OrderHistory[] = [];
   isLoading = true;
   error: string | null = null;
 
-  constructor(private orderService: OrderService) {}
+  constructor(
+    private orderService: OrderService,
+    private modalCtrl: ModalController
+  ) {}
 
   ngOnInit() {
     this.loadOrders();
@@ -95,10 +83,14 @@ export class OrdersComponent implements OnInit {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'warning';
-      case 'shipped':
+      case 'preparing':
         return 'primary';
+      case 'delivering':
+        return 'tertiary';
       case 'delivered':
         return 'success';
+      case 'cancelled':
+        return 'danger';
       default:
         return 'medium';
     }
@@ -114,11 +106,12 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-  formatCurrency(value: number): string {
+  formatCurrency(value: string | number): string {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(value / 100);
+      currency: 'MZN'
+    }).format(numValue);
   }
 
   doRefresh(event: any) {
@@ -133,5 +126,54 @@ export class OrdersComponent implements OnInit {
         event.target.complete();
       }
     });
+  }
+
+  async showTracking(orderId: number) {
+    const modal = await this.modalCtrl.create({
+      component: OrderTrackingComponent,
+      componentProps: {
+        orderId: orderId
+      },
+      breakpoints: [0, 0.5, 0.8, 1],
+      initialBreakpoint: 0.8
+    });
+
+    await modal.present();
+  }
+
+  getStatusText(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'pending': 'Pendente',
+      'preparing': 'Em Preparação',
+      'ready': 'Pronto para Entrega',
+      'delivering': 'Em Entrega',
+      'delivered': 'Entregue',
+      'cancelled': 'Cancelado'
+    };
+    return statusMap[status] || status;
+  }
+
+  canTrackOrder(status: string): boolean {
+    const trackableStatus = ['pending', 'preparing', 'ready', 'delivering'];
+    return trackableStatus.includes(status.toLowerCase());
+  }
+
+  getStatusIcon(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'time-outline';
+      case 'preparing':
+        return 'restaurant-outline';
+      case 'delivering':
+        return 'bicycle-outline';
+      case 'delivered':
+        return 'checkmark-outline';
+      case 'cancelled':
+        return 'close-outline';
+      case 'ready':
+        return 'flag-outline';
+      default:
+        return 'alert-circle-outline';
+    }
   }
 }
