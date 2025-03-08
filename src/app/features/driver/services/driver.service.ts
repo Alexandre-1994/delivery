@@ -279,7 +279,7 @@ export class DriverService {
 
   collectDelivery(trackingId: number): Observable<CollectDeliveryResponse> {
     return this.http.put<CollectDeliveryResponse>(
-      `${this.apiUrl}/customer/accept/collect/delivery/${trackingId}`,
+      `${this.apiUrl}/customer/collect/delivery/${trackingId}`,
       {},
       { headers: this.authService.getAuthHeaders() }
     );

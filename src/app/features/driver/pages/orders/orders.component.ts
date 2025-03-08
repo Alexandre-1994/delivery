@@ -92,29 +92,97 @@ import { FormsModule } from '@angular/forms';
       <!-- Active Orders List -->
       <ion-list *ngIf="!isLoading && !error && selectedSegment === 'active'">
         <ion-item-sliding *ngFor="let delivery of activeOrders">
-          <ion-item button (click)="openOrderDetails(delivery)">
+          <ion-item>
             <ion-label>
               <h2>Pedido #{{ delivery.tracking.tracking_number }}</h2>
-              <p>
-                <ion-icon name="restaurant-outline"></ion-icon>
-                {{ delivery.restaurant.name }}
-              </p>
-              <p>
-                <ion-icon name="location-outline"></ion-icon>
-                {{ delivery.restaurant.address || 'Endereço não disponível' }}
-              </p>
-              <p>
-                <ion-icon name="cash-outline"></ion-icon>
-                {{ formatCurrency(delivery.item.price) }}
-              </p>
-              <p>
-                <ion-icon name="fast-food-outline"></ion-icon>
-                {{ delivery.item.dish_name }} ({{ delivery.item.quantity }}x)
-              </p>
-              <p *ngIf="delivery.customer">
-                <ion-icon name="person-outline"></ion-icon>
-                {{ delivery.customer.name }}
-              </p>
+              <!-- Restaurante -->
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-subtitle>
+                    <ion-icon name="restaurant-outline"></ion-icon>
+                    Restaurante
+                  </ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+                  <p><strong>{{ delivery.restaurant.name }}</strong></p>
+                  <p>{{ delivery.restaurant.address }}</p>
+                  <p *ngIf="delivery.restaurant.phone">
+                    <ion-icon name="call-outline"></ion-icon>
+                    {{ delivery.restaurant.phone }}
+                  </p>
+                  <ion-button *ngIf="delivery.restaurant.lat && delivery.restaurant.lng" 
+                            fill="clear" size="small" 
+                            (click)="openMaps(delivery.restaurant.lat, delivery.restaurant.lng)">
+                    <ion-icon name="navigate-outline" slot="start"></ion-icon>
+                    Navegar até Restaurante
+                  </ion-button>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Cliente -->
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-subtitle>
+                    <ion-icon name="person-outline"></ion-icon>
+                    Cliente
+                  </ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+                  <p><strong>{{ delivery.customer.name }}</strong></p>
+                  <p>{{ delivery.customer.address }}</p>
+                  <p *ngIf="delivery.customer.phone">
+                    <ion-icon name="call-outline"></ion-icon>
+                    {{ delivery.customer.phone }}
+                  </p>
+                  <ion-button *ngIf="delivery.customer.lat && delivery.customer.lng" 
+                            fill="clear" size="small" 
+                            (click)="openMaps(delivery.customer.lat, delivery.customer.lng)">
+                    <ion-icon name="navigate-outline" slot="start"></ion-icon>
+                    Navegar até Cliente
+                  </ion-button>
+                </ion-card-content>
+              </ion-card>
+
+              <!-- Detalhes do Pedido -->
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-subtitle>
+                    <ion-icon name="fast-food-outline"></ion-icon>
+                    Detalhes do Pedido
+                  </ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+                  <p>{{ delivery.item.dish_name }} ({{ delivery.item.quantity }}x)</p>
+                  <p>{{ formatCurrency(delivery.item.price) }}</p>
+                  
+                  <!-- Botões de Ação Principal -->
+                  <div class="action-buttons">
+                    <ion-button *ngIf="delivery.tracking.status === 'awaiting-collection'" 
+                              expand="block"
+                              color="warning"
+                              (click)="confirmCollectOrder(delivery)">
+                      <ion-icon name="restaurant-outline" slot="start"></ion-icon>
+                      Confirmar Coleta no Restaurante
+                    </ion-button>
+
+                    <ion-button *ngIf="delivery.tracking.status === 'accepted'" 
+                              expand="block"
+                              color="warning"
+                              (click)="confirmCollectOrder(delivery)">
+                      <ion-icon name="restaurant-outline" slot="start"></ion-icon>
+                      Confirmar Coleta no Restaurante
+                    </ion-button>
+
+                    <ion-button *ngIf="delivery.tracking.status === 'picked-up'" 
+                              expand="block"
+                              color="success"
+                              (click)="confirmCompleteDelivery(delivery)">
+                      <ion-icon name="flag-outline" slot="start"></ion-icon>
+                      Confirmar Entrega ao Cliente
+                    </ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
             </ion-label>
             <ion-chip [color]="getStatusColor(delivery.tracking.status)" slot="end">
               {{ getStatusText(delivery.tracking.status) }}
@@ -211,6 +279,14 @@ import { FormsModule } from '@angular/forms';
       font-size: 48px;
       margin-bottom: 16px;
     }
+
+    .action-buttons {
+      margin-top: 16px;
+    }
+
+    .action-buttons ion-button {
+      margin: 8px 0;
+    }
   `],
   standalone: true,
   imports: [CommonModule, IonicModule, RouterModule, FormsModule]
@@ -246,7 +322,7 @@ export class OrdersComponent implements OnInit {
         const response = await this.driverService.getCurrentDelivery().toPromise();
         if (response?.delivery) {
           // Se tiver uma entrega atual, verificar o status
-          if (['accepted', 'picked-up'].includes(response.delivery.tracking.status)) {
+          if (['awaiting-collection', 'accepted', 'picked-up'].includes(response.delivery.tracking.status)) {
             this.activeOrders = [response.delivery];
             this.completedOrders = [];
           } else if (response.delivery.tracking.status === 'delivered') {
@@ -282,14 +358,18 @@ export class OrdersComponent implements OnInit {
   }
 
   openOrderDetails(delivery: CurrentDelivery) {
-    if (delivery.tracking.status === 'accepted') {
-      this.confirmCollectOrder(delivery);
-    } else if (delivery.tracking.status === 'picked-up') {
-      this.confirmCompleteDelivery(delivery);
+    switch (delivery.tracking.status) {
+      case 'awaiting-collection':
+      case 'accepted':
+        this.confirmCollectOrder(delivery);
+        break;
+      case 'picked-up':
+        this.confirmCompleteDelivery(delivery);
+        break;
     }
   }
 
-  async confirmAcceptOrder(order: DeliveryOrder) {
+  async confirmAcceptOrder(order: any) {
     const alert = await this.alertCtrl.create({
       header: 'Confirmar Pedido',
       message: `Deseja aceitar o pedido #${order.tracking.tracking_number}?`,
@@ -390,12 +470,16 @@ export class OrdersComponent implements OnInit {
 
   getStatusColor(status: string): string {
     switch (status) {
+      case 'awaiting-collection':
+        return 'tertiary';
       case 'accepted':
         return 'primary';
       case 'picked-up':
         return 'warning';
       case 'delivered':
         return 'success';
+      case 'cancelled':
+        return 'danger';
       default:
         return 'medium';
     }
@@ -403,14 +487,18 @@ export class OrdersComponent implements OnInit {
 
   getStatusText(status: string): string {
     switch (status) {
+      case 'awaiting-collection':
+        return 'Aguardando Coleta';
       case 'accepted':
         return 'Aceito';
       case 'picked-up':
         return 'Em Entrega';
       case 'delivered':
         return 'Entregue';
+      case 'cancelled':
+        return 'Cancelado';
       default:
-        return 'Desconhecido';
+        return status || 'Desconhecido';
     }
   }
 
@@ -432,5 +520,15 @@ export class OrdersComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  openMaps(lat: string | null, lng: string | null) {
+    if (!lat || !lng) {
+      this.showToast('Coordenadas não disponíveis para navegação', 'danger');
+      return;
+    }
+
+    const destination = `${lat},${lng}`;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destination}`, '_blank');
   }
 } 
