@@ -39,12 +39,7 @@ export class AddressService {
   ) {}
 
   private getHeaders(): HttpHeaders {
-    const token = localStorage.getItem('auth_token');
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`
-    });
+    return new HttpHeaders(this.authService.getAuthHeaders());
   }
 
   getAddresses(): Observable<Address[]> {

@@ -3,6 +3,29 @@ import { CommonModule } from '@angular/common';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { PaymentService } from '../../services/payment.service';
+import { addIcons } from 'ionicons';
+import {
+  closeOutline,
+  cardOutline,
+  cashOutline,
+  phonePortraitOutline,
+  personOutline,
+  walletOutline,
+  checkmarkOutline,
+  addOutline
+} from 'ionicons/icons';
+
+// Registrar os ícones
+addIcons({
+  'close-outline': closeOutline,
+  'card-outline': cardOutline,
+  'cash-outline': cashOutline,
+  'phone-portrait-outline': phonePortraitOutline,
+  'person-outline': personOutline,
+  'wallet-outline': walletOutline,
+  'checkmark-outline': checkmarkOutline,
+  'add-outline': addOutline
+});
 
 @Component({
   selector: 'app-add-payment-modal',

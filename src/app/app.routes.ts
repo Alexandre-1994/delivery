@@ -38,6 +38,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/consumer/pages/cart/cart.component').then(m => m.CartComponent)
       },
       {
+        path: 'checkout',
+        loadComponent: () => import('./features/consumer/pages/checkout/checkout.component').then(m => m.CheckoutComponent)
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/consumer/pages/profile/profile.component').then(m => m.ProfileComponent)
       }

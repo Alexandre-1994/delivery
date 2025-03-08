@@ -2,7 +2,39 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { OrderService, OrderHistory } from '../../services/order.service';
+import { addIcons } from 'ionicons';
+import {
+  receiptOutline,
+  alertCircleOutline,
+  calendarOutline,
+  bicycleOutline,
+  checkmarkCircleOutline,
+  timeOutline,
+  cartOutline,
+  restaurantOutline,
+  locationOutline,
+  callOutline,
+  personOutline,
+  homeOutline
+} from 'ionicons/icons';
+
+// Registrar os ícones
+addIcons({
+  'receipt-outline': receiptOutline,
+  'alert-circle-outline': alertCircleOutline,
+  'calendar-outline': calendarOutline,
+  'bicycle-outline': bicycleOutline,
+  'checkmark-circle-outline': checkmarkCircleOutline,
+  'time-outline': timeOutline,
+  'cart-outline': cartOutline,
+  'restaurant-outline': restaurantOutline,
+  'location-outline': locationOutline,
+  'call-outline': callOutline,
+  'person-outline': personOutline,
+  'home-outline': homeOutline
+});
 
 interface OrderItem {
   id: number;
@@ -29,7 +61,7 @@ interface Order {
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterModule]
+  imports: [CommonModule, IonicModule, RouterModule, FormsModule]
 })
 export class OrdersComponent implements OnInit {
   orders: OrderHistory[] = [];
