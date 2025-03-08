@@ -58,7 +58,7 @@ export class CartComponent implements OnInit, OnDestroy {
           id: items[0].restaurantId,
           name: items[0].restaurantName,
           deliveryFee: 1500, // Valor fixo ou buscar da API
-          minOrder: 3000 // Valor fixo ou buscar da API
+          minOrder: 0 // Valor fixo ou buscar da API
         };
       } else {
         this.restaurant = null;
@@ -194,7 +194,7 @@ export class CartComponent implements OnInit, OnDestroy {
         position: 'bottom',
         color: 'danger'
       });
-      toast.present();
+      toast.present(); 
     } finally {
       loading.dismiss();
     }
