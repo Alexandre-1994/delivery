@@ -32,17 +32,20 @@ addIcons({
   'person': person
 });
 
+// Registrar o componente Swiper
+// register();
+
 @Component({
   selector: 'app-restaurants',
   templateUrl: './restaurants.component.html',
   styleUrls: ['./restaurants.component.scss'],
   standalone: true,
   imports: [
-    CommonModule, 
-    IonicModule, 
-    FormsModule, 
+    CommonModule,
+    IonicModule,
+    FormsModule,
     RouterModule,
-    HttpClientModule 
+    HttpClientModule
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -53,19 +56,19 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   cartItems: number = 0;
   selectedCategory: string = 'all';
   userName: string = ''; // Add userName property
-  
+
   // Dados da API
   restaurants: Restaurant[] = [];
   categories: Category[] = [];
   topDishes: Dish[] = [];
-  
+
   // Dados filtrados
   filteredRestaurants: Restaurant[] = [];
-  
+
   // Estado do componente
   isLoading: boolean = true;
   errorMessage: string = '';
-  
+
   // Configuração do slider (agora será definida no template com swiper-container)
   slideOpts = {
     slidesPerView: 2.5,
@@ -130,8 +133,8 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     }
 
     const term = this.searchTerm.toLowerCase();
-    this.filteredRestaurants = this.restaurants.filter(restaurant => 
-      restaurant.name.toLowerCase().includes(term) || 
+    this.filteredRestaurants = this.restaurants.filter(restaurant =>
+      restaurant.name.toLowerCase().includes(term) ||
       restaurant.city?.toLowerCase().includes(term) ||
       restaurant.neighborhood?.toLowerCase().includes(term)
     );
@@ -139,12 +142,12 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
 
   filterByCategory(category: string) {
     this.selectedCategory = category;
-    
+
     if (category === 'all') {
       this.filteredRestaurants = [...this.restaurants];
       return;
     }
-    
+
     // Aqui você precisará adaptar para filtrar conforme a estrutura real da sua API
     this.filteredRestaurants = this.restaurants.filter(restaurant => {
       // Se estiver filtrando por cidade
@@ -187,7 +190,7 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   goToHome() {
     this.router.navigate(['/consumer/restaurants']);
   }
-  
+
   goToDelivery() {
     this.router.navigate(['/delivery/available-orders']);
   }
@@ -196,12 +199,12 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     if (!photoName) return 'assets/images/default-restaurant.jpg';
     return `http://127.0.0.1:8000/get-image/restaurant/${photoName}`;
   }
-  
-  getDishImageUrl(photoName: string): string {
-    if (!photoName) return 'assets/images/default-dish.jpg';
-    return `http://127.0.0.1:8000/storage/dishes/${photoName}`;
+
+  getDishImageUrl(image: string): string {
+    if (!image) return 'assets/images/default-dish.jpg';
+    return `http://127.0.0.1:8000/get-image/dishes/${image}`;
   }
-  
+
   refreshData(event: any) {
     this.restaurantService.clearCache();
     this.loadHomeData();
@@ -216,7 +219,7 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
       duration: 1000
     });
     await loading.present();
-    
+
     try {
       this.authService.logout();
       await loading.dismiss();
