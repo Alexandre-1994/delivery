@@ -34,13 +34,13 @@ export class CartComponent implements OnInit, OnDestroy {
   couponCode: string = '';
   discount: number = 0;
   isLoading: boolean = false;
-  
+
   private cartSubscription: Subscription | null = null;
 
   constructor(
     private router: Router,
     private cartService: CartService,
-    private orderService: OrderService, 
+    private orderService: OrderService,
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
@@ -50,7 +50,7 @@ export class CartComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.cartSubscription = this.cartService.getItems().subscribe(items => {
       this.cartItems = items;
-      
+
       // Se tivermos itens, extrair informações do restaurante
       if (items.length > 0) {
         // Idealmente, buscar esses valores da API
@@ -65,7 +65,7 @@ export class CartComponent implements OnInit, OnDestroy {
       }
     });
   }
-  
+
   ngOnDestroy() {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
@@ -74,7 +74,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
   // Getters para cálculos
   get subtotal(): number {
-    return this.cartItems.reduce((total, item) => 
+    return this.cartItems.reduce((total, item) =>
       total + (item.price * item.quantity), 0);
   }
 
@@ -117,7 +117,7 @@ export class CartComponent implements OnInit, OnDestroy {
         }
       ]
     });
-    
+
     await alert.present();
   }
 
@@ -143,7 +143,7 @@ export class CartComponent implements OnInit, OnDestroy {
         }
       ]
     });
-    
+
     await alert.present();
   }
 
@@ -174,7 +174,7 @@ export class CartComponent implements OnInit, OnDestroy {
       // TODO: Implementar validação do cupom com a API
       // Por enquanto, apenas simular um desconto
       this.discount = 500; // 5 reais de desconto
-      
+
       const toast = await this.toastCtrl.create({
         message: 'Cupom aplicado com sucesso!',
         duration: 2000,
@@ -257,5 +257,10 @@ export class CartComponent implements OnInit, OnDestroy {
       style: 'currency',
       currency: 'MZN'
     });
+  }
+  // Helper para imagens
+  getItemImageUrl(image: string | null): string {
+    if (!image) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/dishes/${image}`;
   }
 }
