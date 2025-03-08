@@ -1,0 +1,173 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Rastreamento do Pedido</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Mapa -->
+  <div class="map-container">
+    <div #mapElement class="map-element"></div>
+    <!-- Erro do Mapa -->
+    <div *ngIf="!map && trackingInfo" class="map-error">
+      <ion-icon name="map-outline" color="danger" size="large"></ion-icon>
+      <p>Não foi possível carregar o mapa. Verifique sua conexão ou tente novamente mais tarde.</p>
+      <ion-button (click)="loadTrackingInfo()" fill="clear">
+        <ion-icon name="refresh-outline" slot="start"></ion-icon>
+        Tentar Novamente
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Informações do Pedido -->
+  <ion-card *ngIf="trackingInfo">
+    <ion-card-header>
+      <ion-card-subtitle>
+        <ion-chip [color]="getStatusColor(trackingInfo.status)">
+          {{ getStatusText(trackingInfo.status) }}
+        </ion-chip>
+        <span class="tracking-number">Nº {{ trackingInfo.tracking_number }}</span>
+      </ion-card-subtitle>
+      <ion-card-title>{{ trackingInfo.restaurant_info.name }}</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <!-- Detalhes do Pedido -->
+      <ion-list lines="none">
+        <!-- Item do Pedido -->
+        <ion-item>
+          <ion-icon name="fast-food-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>
+            <h2>{{ trackingInfo.order_item.dish.name }}</h2>
+            <p>{{ trackingInfo.order_item.quantity }}x {{ formatCurrency(trackingInfo.order_item.price) }}</p>
+          </ion-label>
+        </ion-item>
+
+        <!-- Tempo Estimado -->
+        <ion-item>
+          <ion-icon name="time-outline" slot="start" color="warning"></ion-icon>
+          <ion-label>
+            <h2>Tempo Estimado</h2>
+            <p>{{ estimatedTime }} minutos</p>
+          </ion-label>
+        </ion-item>
+
+        <!-- Distância -->
+        <ion-item>
+          <ion-icon name="location-outline" slot="start" color="tertiary"></ion-icon>
+          <ion-label>
+            <h2>Distância</h2>
+            <p>{{ distance }} km</p>
+          </ion-label>
+        </ion-item>
+
+        <!-- Endereço de Entrega -->
+        <ion-item>
+          <ion-icon name="home-outline" slot="start" color="success"></ion-icon>
+          <ion-label class="ion-text-wrap">
+            <h2>Endereço de Entrega</h2>
+            <p>{{ getDeliveryAddress() }}</p>
+          </ion-label>
+        </ion-item>
+
+        <!-- Horários -->
+        <ion-item *ngIf="trackingInfo.pickup_time">
+          <ion-icon name="restaurant-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>
+            <h2>Retirado do Restaurante</h2>
+            <p>{{ formatDate(trackingInfo.pickup_time) }}</p>
+          </ion-label>
+        </ion-item>
+
+        <ion-item *ngIf="trackingInfo.delivery_time">
+          <ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon>
+          <ion-label>
+            <h2>Previsão de Entrega</h2>
+            <p>{{ formatDate(trackingInfo.delivery_time) }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Loading -->
+  <div *ngIf="!trackingInfo" class="ion-padding ion-text-center">
+    <ion-spinner></ion-spinner>
+    <p>Carregando informações do pedido...</p>
+  </div>
+</ion-content>
+
+<style>
+.map-container {
+  width: 100%;
+  height: 40vh;
+  min-height: 300px;
+}
+
+ion-card {
+  margin: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+ion-card-header {
+  padding: 16px;
+}
+
+ion-card-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tracking-number {
+  color: var(--ion-color-medium);
+  font-size: 14px;
+}
+
+ion-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+ion-list {
+  padding: 0;
+}
+
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 8px;
+}
+
+ion-item ion-icon {
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+ion-item h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  color: var(--ion-color-dark);
+}
+
+ion-item p {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  margin: 4px 0 0;
+}
+
+ion-chip {
+  margin: 0;
+  font-size: 12px;
+  height: 24px;
+}
+</style> 

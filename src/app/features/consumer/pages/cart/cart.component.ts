@@ -7,6 +7,8 @@ import { Router, RouterModule } from '@angular/router';
 import { CartService, CartItem } from '../../services/cart.service';
 import { Subscription } from 'rxjs';
 import { OrderService } from '../../services/order.service';
+import { environment } from 'src/environments/environment';
+import { AuthService } from 'src/app/core/services/auth.service';
 
 @Component({
   selector: 'app-cart',
@@ -31,16 +33,18 @@ export class CartComponent implements OnInit, OnDestroy {
   orderNotes: string = '';
   couponCode: string = '';
   discount: number = 0;
+  isLoading: boolean = false;
 
   private cartSubscription: Subscription | null = null;
 
   constructor(
     private router: Router,
     private cartService: CartService,
-    private orderService: OrderService, 
+    private orderService: OrderService,
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
-    private loadingCtrl: LoadingController
+    private loadingCtrl: LoadingController,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -49,6 +53,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
       // Se tivermos itens, extrair informações do restaurante
       if (items.length > 0) {
+        // Idealmente, buscar esses valores da API
         this.restaurant = {
           id: items[0].restaurantId,
           name: items[0].restaurantName,
@@ -142,123 +147,105 @@ export class CartComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
+  // Método para obter URL da imagem
+  // getItemImageUrl(photo: string): string {
+  //   return `${environment.apiUrl}/storage/${photo}`;
+  // }
+  getItemImageUrl(image: string): string {
+    // if (!image) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/dishes/${image}`;
+  }
+
   // Método para aplicar cupom
-  async applyCoupon(): Promise<void> {
-    if (!this.couponCode) return;
+  async applyCoupon() {
+    if (!this.couponCode) {
+      const toast = await this.toastCtrl.create({
+        message: 'Digite um cupom válido',
+        duration: 2000,
+        position: 'bottom',
+        color: 'warning'
+      });
+      toast.present();
+      return;
+    }
 
     const loading = await this.loadingCtrl.create({
-      message: 'Verificando cupom...'
+      message: 'Validando cupom...'
     });
     await loading.present();
 
     try {
-      // Aqui você faria uma chamada API para verificar o cupom
-      // Simulando para fins de exemplo
-      setTimeout(() => {
-        if (this.couponCode.toUpperCase() === 'DESC10') {
-          this.discount = this.subtotal * 0.1; // 10% de desconto
-          this.toastCtrl.create({
-            message: 'Cupom aplicado com sucesso!',
-            duration: 10,
-            position: 'bottom',
-            color: 'success'
-          }).then(toast => toast.present());
-        } else {
-          this.discount = 0;
-          this.toastCtrl.create({
-            message: 'Cupom inválido',
-            duration: 10,
-            position: 'bottom',
-            color: 'danger'
-          }).then(toast => toast.present());
-        }
-        loading.dismiss();
-      }, 10);
+      // TODO: Implementar validação do cupom com a API
+      // Por enquanto, apenas simular um desconto
+      this.discount = 500; // 5 reais de desconto
+
+      const toast = await this.toastCtrl.create({
+        message: 'Cupom aplicado com sucesso!',
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      toast.present();
     } catch (error) {
-      loading.dismiss();
-      this.toastCtrl.create({
-        message: 'Erro ao verificar cupom',
-        duration: 10,
+      console.error('Erro ao aplicar cupom:', error);
+      const toast = await this.toastCtrl.create({
+        message: 'Erro ao aplicar cupom. Tente novamente.',
+        duration: 2000,
         position: 'bottom',
         color: 'danger'
-      }).then(toast => toast.present()); 
+      });
+      toast.present();
+    } finally {
+      loading.dismiss();
     }
   }
 
+  // Método para continuar comprando
+  continueShopping() {
+    this.router.navigate(['/consumer/restaurants']);
+  }
+
   // Método para finalizar pedido
-  // async checkout(): Promise<void> {
-  //   // Validar pedido mínimo
-  //   if (this.total < (this.restaurant?.minOrder || 0)) {
-  //     const remaining = this.getRemainingForMinOrder();
-  //     this.toastCtrl.create({
-  //       message: `Pedido mínimo não atingido. Adicione mais ${this.formatCurrency(remaining)}`,
-  //       duration: 3000,
-  //       position: 'bottom',
-  //       color: 'warning'
-  //     }).then(toast => toast.present());
-  //     return;
-  //   }
-  
-  //   const loading = await this.loadingCtrl.create({
-  //     message: 'Processando seu pedido...'
-  //   });
-  //   await loading.present();
-  
-  //   try {
-  //     // Preparar dados do pedido no formato esperado pela API
-  //     const orderData = this.orderService.prepareOrderData(
-  //       this.cartItems,
-  //       this.restaurant,
-  //       this.subtotal,
-  //       this.restaurant?.deliveryFee || 0,
-  //       this.discount,
-  //       this.total,
-  //       this.orderNotes,
-  //       this.couponCode
-  //     );
-  
-  //     // Enviar pedido para a API
-  //     const response = await this.orderService.createOrder(orderData).toPromise();
-  
-  //     // Limpar o carrinho após o pedido ser bem-sucedido
-  //     this.cartService.clearCart();
-  
-  //     loading.dismiss();
-  
-  //     // Mostrar confirmação
-  //     const alert = await this.alertCtrl.create({
-  //       header: 'Pedido Realizado',
-  //       message: 'Seu pedido foi enviado com sucesso!',
-  //       buttons: [
-  //         {
-  //           text: 'OK',
-  //           handler: () => {
-  //             // Navegar para a página de pedidos ou detalhes do pedido
-  //             this.router.navigate(['/consumer/orders']);
-  //           }
-  //         }
-  //       ]
-  //     });
-  //     await alert.present();
-  
-  //   } catch (error) {
-  //     loading.dismiss();
-  //     console.error('Erro ao processar o pedido:', error);
-  
-  //     // Mostrar mensagem de erro
-  //     const toast = await this.toastCtrl.create({
-  //       message: 'Ocorreu um erro ao processar seu pedido. Tente novamente.',
-  //       duration: 3000,
-  //       position: 'bottom',
-  //       color: 'danger'
-  //     });
-  //     await toast.present();
-  //   }
-  // }
-  async checkout(): Promise<void> {
-    // Navegar para a página de checkout em vez de processar o pedido diretamente
+  async checkout() {
+    // Primeiro verificar o pedido mínimo
+    if (!this.isMinOrderMet()) {
+      const toast = await this.toastCtrl.create({
+        message: `Pedido mínimo é ${this.formatCurrency(this.restaurant?.minOrder || 0)}`,
+        duration: 2000,
+        position: 'bottom',
+        color: 'warning'
+      });
+      toast.present();
+      return;
+    }
+
+    // Verificar autenticação
+    if (!this.authService.isAuthenticated) {
+      const alert = await this.alertCtrl.create({
+        header: 'Autenticação necessária',
+        message: 'Você precisa fazer login para continuar',
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Fazer Login',
+            handler: () => {
+              this.authService.setReturnUrl('/consumer/checkout');
+              this.router.navigate(['/auth/login']);
+            }
+          }
+        ]
+      });
+      await alert.present();
+      return;
+    }
+
+    // Se estiver autenticado, prosseguir para o checkout
     this.router.navigate(['/consumer/checkout']);
   }
+
   // Validações
   isMinOrderMet(): boolean {
     return this.subtotal >= (this.restaurant?.minOrder || 0);
@@ -268,26 +255,11 @@ export class CartComponent implements OnInit, OnDestroy {
     return (this.restaurant?.minOrder || 0) - this.subtotal;
   }
 
-  // Navegação
-  continueShopping(): void {
-    if (this.restaurant) {
-      this.router.navigate(['/consumer/restaurant', this.restaurant.id]);
-    } else {
-      this.router.navigate(['/consumer/restaurants']);
-    }
-  }
-
   // Formatadores
   formatCurrency(value: number): string {
-    return value.toLocaleString('pt-AO', {
+    return value.toLocaleString('pt-MZ', {
       style: 'currency',
       currency: 'MZN'
     });
-  }
-
-  // Helper para imagens
-  getItemImageUrl(image: string | null): string {
-    if (!image) return 'assets/placeholder-food.jpg';
-    return `http://127.0.0.1:8000/get-image/dishes/${image}`;
   }
 }

@@ -1,7 +1,7 @@
 // src/app/features/consumer/pages/checkout/checkout.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { IonicModule, ModalController, ToastController, LoadingController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CartService, CartItem } from '../../services/cart.service';
@@ -10,8 +10,32 @@ import { PaymentService, PaymentMethod } from '../../services/payment.service';
 import { OrderService } from '../../services/order.service';
 import { AddAddressModalComponent } from '../../components/add-address-modal/add-address-modal.component';
 import { AddPaymentModalComponent } from '../../components/add-payment-modal/add-payment-modal.component';
+import { addIcons } from 'ionicons';
+import {
+  addOutline,
+  cardOutline,
+  cashOutline,
+  chevronForwardOutline,
+  locationOutline,
+  walletOutline,
+  arrowBackOutline,
+  closeOutline,
+  checkmarkOutline
+} from 'ionicons/icons';
+import { AuthService } from 'src/app/core/services/auth.service';
 
-
+// Registrar os ícones
+addIcons({
+  'add-outline': addOutline,
+  'card-outline': cardOutline,
+  'cash-outline': cashOutline,
+  'chevron-forward-outline': chevronForwardOutline,
+  'location-outline': locationOutline,
+  'wallet-outline': walletOutline,
+  'arrow-back-outline': arrowBackOutline,
+  'close-outline': closeOutline,
+  'checkmark-outline': checkmarkOutline
+});
 
 @Component({
   selector: 'app-checkout',
@@ -30,8 +54,8 @@ export class CheckoutComponent implements OnInit {
   paymentMethods: PaymentMethod[] = [];
   
   // Seleções do usuário
-  selectedAddressId: any | null = null;
-  selectedPaymentMethodId: any| null = null;
+  selectedAddressId: number | null = null;
+  selectedPaymentMethodId: number | null = null;
   
   // Flags de carregamento
   isLoading = true;
@@ -39,13 +63,8 @@ export class CheckoutComponent implements OnInit {
   isPaymentsLoading = false;
 
   // Order summary
-  // subtotal: number = 0;
   deliveryFee: number = 0;
   discount: number = 0;
-  loadingCtrl: any;
-  alertCtrl: any;
-  toastCtrl: any;
-  // total: number = 0;
 
   constructor(
     private router: Router,
@@ -53,10 +72,20 @@ export class CheckoutComponent implements OnInit {
     private addressService: AddressService,
     private paymentService: PaymentService,
     private orderService: OrderService,
-    private modalCtrl: ModalController
+    private modalCtrl: ModalController,
+    private toastCtrl: ToastController,
+    private loadingCtrl: LoadingController,
+    private authService: AuthService
   ) {}
 
   async ngOnInit() {
+    // Verificar autenticação primeiro
+    if (!this.authService.isAuthenticated) {
+      this.authService.setReturnUrl('/consumer/checkout');
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
     // Carregar dados do carrinho
     this.cartService.getItems().subscribe(items => {
       this.cartItems = items;
@@ -84,21 +113,34 @@ export class CheckoutComponent implements OnInit {
     this.isAddressesLoading = true;
     
     try {
-      const response = await this.addressService.getAddresses().toPromise();
-      if (response && response.data) {
-        this.addresses = response.data;
+      const addresses = await this.addressService.getAddresses().toPromise();
+      if (addresses) {
+        this.addresses = addresses;
         
         // Selecionar o endereço padrão, se existir
-        const defaultAddress = this.addresses.find(addr => addr.is_default);
+        const defaultAddress = this.addresses.find(addr => addr.is_default === 1);
         if (defaultAddress) {
           this.selectedAddressId = defaultAddress.id;
         } else if (this.addresses.length > 0) {
           this.selectedAddressId = this.addresses[0].id;
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar endereços:', error);
-      // Mostrar mensagem de erro
+      
+      if (error.status === 401) {
+        // Se for erro de autenticação, redirecionar para login
+        this.authService.setReturnUrl('/consumer/checkout');
+        this.router.navigate(['/auth/login']);
+      } else {
+        const toast = await this.toastCtrl.create({
+          message: 'Não foi possível carregar seus endereços. Tente novamente.',
+          duration: 3000,
+          position: 'bottom',
+          color: 'danger'
+        });
+        toast.present();
+      }
     } finally {
       this.isAddressesLoading = false;
     }
@@ -109,8 +151,8 @@ export class CheckoutComponent implements OnInit {
     
     try {
       const response = await this.paymentService.getPaymentMethods().toPromise();
-      if (response && response.data) {
-        this.paymentMethods = response.data;
+      if (response) {
+        this.paymentMethods = response;
         
         // Selecionar o método de pagamento padrão, se existir
         const defaultPayment = this.paymentMethods.find(payment => payment.is_default);
@@ -120,9 +162,22 @@ export class CheckoutComponent implements OnInit {
           this.selectedPaymentMethodId = this.paymentMethods[0].id;
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar métodos de pagamento:', error);
-      // Mostrar mensagem de erro
+      
+      if (error.status === 401) {
+        // Se for erro de autenticação, redirecionar para login
+        this.authService.setReturnUrl('/consumer/checkout');
+        this.router.navigate(['/auth/login']);
+      } else {
+        const toast = await this.toastCtrl.create({
+          message: 'Não foi possível carregar seus métodos de pagamento. Tente novamente.',
+          duration: 3000,
+          position: 'bottom',
+          color: 'danger'
+        });
+        toast.present();
+      }
     } finally {
       this.isPaymentsLoading = false;
     }
@@ -137,7 +192,7 @@ export class CheckoutComponent implements OnInit {
 
     const { data } = await modal.onWillDismiss();
     if (data && data.added) {
-      this.loadAddresses();
+      await this.loadAddresses();
     }
   }
 
@@ -150,7 +205,7 @@ export class CheckoutComponent implements OnInit {
 
     const { data } = await modal.onWillDismiss();
     if (data && data.added) {
-      this.loadPaymentMethods();
+      await this.loadPaymentMethods();
     }
   }
 
@@ -165,23 +220,85 @@ export class CheckoutComponent implements OnInit {
 
   async confirmOrder() {
     if (!this.canConfirmOrder()) {
+      const toast = await this.toastCtrl.create({
+        message: 'Selecione um endereço e um método de pagamento',
+        duration: 3000,
+        position: 'bottom',
+        color: 'warning'
+      });
+      toast.present();
       return;
     }
 
+    if (!this.selectedAddressId || !this.selectedPaymentMethodId) {
+      const toast = await this.toastCtrl.create({
+        message: 'Endereço e método de pagamento são obrigatórios',
+        duration: 3000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      toast.present();
+      return;
+    }
+
+    const loading = await this.loadingCtrl.create({
+      message: 'Processando seu pedido...'
+    });
+    await loading.present();
+
     try {
-      // Implementar lógica de confirmação do pedido
-      await this.orderService.createOrder({
-        restaurant_id: 0,
-        items: [],
-        subtotal: 0,
-        delivery_fee: 0,
-        discount: 0,
-        total: 0
-      }).toPromise();
+      // Preparar dados do pedido usando o serviço
+      const orderData = this.orderService.prepareOrderData(
+        this.cartItems,
+        this.selectedAddressId,
+        this.selectedPaymentMethodId,
+        this.total
+      );
       
+      // Enviar pedido para a API
+      const response = await this.orderService.createOrder(orderData).toPromise();
+      
+      // Limpar carrinho
+      this.cartService.clearCart();
+      
+      // Mostrar mensagem de sucesso
+      const toast = await this.toastCtrl.create({
+        message: 'Pedido realizado com sucesso!',
+        duration: 3000,
+        position: 'bottom',
+        color: 'success'
+      });
+      toast.present();
+      
+      // Redirecionar para a página de pedidos
       this.router.navigate(['/consumer/orders']);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao confirmar pedido:', error);
+      
+      // Verificar se é erro de autenticação
+      if (error.status === 401) {
+        const toast = await this.toastCtrl.create({
+          message: 'Sua sessão expirou. Por favor, faça login novamente.',
+          duration: 3000,
+          position: 'bottom',
+          color: 'warning'
+        });
+        toast.present();
+        
+        // Salvar URL atual e redirecionar para login
+        this.authService.setReturnUrl('/consumer/checkout');
+        this.router.navigate(['/auth/login']);
+      } else {
+        const toast = await this.toastCtrl.create({
+          message: 'Não foi possível processar seu pedido. Tente novamente.',
+          duration: 3000,
+          position: 'bottom',
+          color: 'danger'
+        });
+        toast.present();
+      }
+    } finally {
+      await loading.dismiss();
     }
   }
   
@@ -197,89 +314,40 @@ export class CheckoutComponent implements OnInit {
   
   // Navegação
   goToAddNewAddress() {
-    // Navegar para página de adicionar endereço
     this.router.navigate(['/consumer/profile/address/add']);
   }
   
   goToAddNewPaymentMethod() {
-    // Navegar para página de adicionar método de pagamento
     this.router.navigate(['/consumer/profile/payment/add']);
   }
   
   // Finalizar Pedido
   async placeOrder() {
     if (!this.selectedAddressId) {
-      this.showToast('Selecione um endereço de entrega');
+      const toast = await this.toastCtrl.create({
+        message: 'Selecione um endereço de entrega',
+        duration: 3000,
+        position: 'bottom',
+        color: 'warning'
+      });
+      toast.present();
       return;
     }
     
     if (!this.selectedPaymentMethodId) {
-      this.showToast('Selecione um método de pagamento');
+      const toast = await this.toastCtrl.create({
+        message: 'Selecione um método de pagamento',
+        duration: 3000,
+        position: 'bottom',
+        color: 'warning'
+      });
+      toast.present();
       return;
     }
     
-    const loading = await this.loadingCtrl.create({
-      message: 'Processando seu pedido...'
-    });
-    await loading.present();
-    
-    try {
-      // Encontrar o método de pagamento selecionado
-      const paymentMethod = this.paymentMethods.find(p => p.id === this.selectedPaymentMethodId);
-      
-      // Preparar dados do pedido
-      const orderData = {
-        restaurant_id: this.restaurant.id,
-        items: this.cartItems.map(item => ({
-          id: item.id,
-          quantity: item.quantity,
-          notes: item.notes || ''
-        })),
-        subtotal: this.subtotal,
-        delivery_fee: this.restaurant.deliveryFee,
-        total: this.total,
-        notes: this.orderNotes || '',
-        discount: 0,
-        
-        // Dados adicionais
-        address_id: this.selectedAddressId,
-        payment_method_id: this.selectedPaymentMethodId,
-        payment_type: paymentMethod?.type || ''
-      };
-      
-      // Enviar pedido para a API
-      const response = await this.orderService.createOrder(orderData).toPromise();
-      
-      // Limpar o carrinho
-      this.cartService.clearCart();
-      
-      loading.dismiss();
-      
-      // Mostrar confirmação
-      const alert = await this.alertCtrl.create({
-        header: 'Pedido Realizado',
-        message: 'Seu pedido foi enviado com sucesso!',
-        buttons: [
-          {
-            text: 'OK',
-            handler: () => {
-              // Navegar para a página de pedidos
-              this.router.navigate(['/consumer/orders']);
-            }
-          }
-        ]
-      });
-      await alert.present();
-      
-    } catch (error) {
-      loading.dismiss();
-      console.error('Erro ao processar o pedido:', error);
-      
-      this.showToast('Ocorreu um erro ao processar seu pedido. Tente novamente.');
-    }
+    await this.confirmOrder();
   }
   
-  // Helpers
   async showToast(message: string, color = 'danger') {
     const toast = await this.toastCtrl.create({
       message,
@@ -291,19 +359,29 @@ export class CheckoutComponent implements OnInit {
   }
   
   formatCurrency(value: number): string {
-    return value.toLocaleString('pt-AO', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'MZN'
-    });
+      currency: 'BRL'
+    }).format(value / 100); // Convertendo centavos para reais
   }
   
   getPaymentMethodIcon(type: string): string {
-    const icons: {[key: string]: string} = {
-      'bank_card': 'card',
-      'mpesa': 'cash',
-      'emola': 'wallet'
-    };
-    
-    return icons[type] || 'card';
+    switch (type.toLowerCase()) {
+      case 'credit_card':
+        return 'card-outline';
+      case 'debit_card':
+        return 'card-outline';
+      case 'pix':
+        return 'qr-code-outline';
+      case 'cash':
+        return 'cash-outline';
+      default:
+        return 'card-outline';
+    }
+  }
+
+  // Método para formatar o endereço para exibição
+  formatAddress(address: Address): string {
+    return `${address.street}, ${address.block} - ${address.neighborhood}, ${address.city}, ${address.province}, ${address.country}`;
   }
 }

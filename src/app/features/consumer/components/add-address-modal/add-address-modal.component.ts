@@ -20,12 +20,17 @@ export class AddAddressModalComponent {
     private addressService: AddressService
   ) {
     this.addressForm = this.fb.group({
-      street: ['', [Validators.required]],
-      number: ['', [Validators.required]],
-      neighborhood: ['', [Validators.required]],
+      address_name: ['', [Validators.required]],
+      recipient_name: ['', [Validators.required]],
+      phone: ['', [Validators.required]],
+      province: ['', [Validators.required]],
       city: ['', [Validators.required]],
-      complement: [''],
+      neighborhood: ['', [Validators.required]],
+      street: ['', [Validators.required]],
+      block: ['', [Validators.required]],
       reference: [''],
+      addressLat: [''],
+      addressLng: [''],
       is_default: [false]
     });
   }
@@ -42,7 +47,7 @@ export class AddAddressModalComponent {
       if (response) {
         this.modalCtrl.dismiss({
           added: true,
-          address: response.data
+          address: response
         });
       }
     } catch (error) {

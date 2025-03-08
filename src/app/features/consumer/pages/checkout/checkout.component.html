@@ -24,9 +24,11 @@
       <ion-radio-group [(ngModel)]="selectedAddressId">
         <ion-item *ngFor="let address of addresses">
           <ion-label>
-            <h3>{{address.street}}, {{address.number}}</h3>
-            <p>{{address.neighborhood}}, {{address.city}}</p>
-            <p *ngIf="address.complement">{{address.complement}}</p>
+            <h3>{{address.address_name}}</h3>
+            <p>{{address.recipient_name}} - {{address.phone}}</p>
+            <p>{{formatAddress(address)}}</p>
+            <p *ngIf="address.reference">Referência: {{address.reference}}</p>
+            <p *ngIf="address.is_default === 1" class="default-badge">Endereço Padrão</p>
           </ion-label>
           <ion-radio [value]="address.id"></ion-radio>
         </ion-item>
@@ -56,8 +58,16 @@
       <ion-radio-group [(ngModel)]="selectedPaymentMethodId">
         <ion-item *ngFor="let method of paymentMethods">
           <ion-label>
-            <h3>{{method.type === 'bank_card' ? 'Cartão' : (method.type === 'mpesa' ? 'M-Pesa' : 'E-mola')}}</h3>
-            <p *ngIf="method.type === 'bank_card'">**** **** **** {{method.last4}}</p>
+            <h3>{{method.title}}</h3>
+            <p *ngIf="method.type === 'mpesa' && method.mpesa_details">
+              Telefone: {{method.mpesa_details.phone_number}}
+            </p>
+            <p *ngIf="method.type === 'card'">
+              Cartão de crédito/débito
+            </p>
+            <p *ngIf="method.type === 'emola'">
+              E-mola
+            </p>
           </ion-label>
           <ion-radio [value]="method.id"></ion-radio>
         </ion-item>
@@ -79,19 +89,19 @@
     <div class="order-summary">
       <div class="summary-item">
         <span>Subtotal</span>
-        <span>{{subtotal | currency:'MZN'}}</span>
+        <span>{{formatCurrency(subtotal)}}</span>
       </div>
       <div class="summary-item">
         <span>Taxa de Entrega</span>
-        <span>{{deliveryFee | currency:'MZN'}}</span>
+        <span>{{formatCurrency(deliveryFee)}}</span>
       </div>
       <div class="summary-item" *ngIf="discount > 0">
         <span>Desconto</span>
-        <span>-{{discount | currency:'MZN'}}</span>
+        <span>-{{formatCurrency(discount)}}</span>
       </div>
       <div class="summary-item total">
         <span>Total</span>
-        <span>{{total | currency:'MZN'}}</span>
+        <span>{{formatCurrency(total)}}</span>
       </div>
     </div>
   </div>
@@ -103,7 +113,7 @@
       <div class="total-info">
         <span>Total a Pagar</span>
         <ion-text color="primary">
-          <strong>{{total | currency:'MZN'}}</strong>
+          <strong>{{formatCurrency(total)}}</strong>
         </ion-text>
       </div>
       <ion-button 
@@ -167,5 +177,15 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.default-badge {
+  display: inline-block;
+  background-color: var(--ion-color-primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

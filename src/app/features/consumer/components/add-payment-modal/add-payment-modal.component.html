@@ -9,41 +9,37 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content class="ion-padding">
   <form [formGroup]="paymentForm" (ngSubmit)="savePayment()">
-    <ion-list>
+    <ion-item>
+      <ion-label position="floating">Tipo de Pagamento</ion-label>
+      <ion-select formControlName="type" (ionChange)="onPaymentTypeChange()">
+        <ion-select-option value="mpesa">M-PESA</ion-select-option>
+        <ion-select-option value="emola">E-MOLA</ion-select-option>
+        <ion-select-option value="card">Cartão</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <div formGroupName="details">
       <ion-item>
-        <ion-label position="stacked">Tipo de Pagamento</ion-label>
-        <ion-select formControlName="type" (ionChange)="onPaymentTypeChange()">
-          <ion-select-option *ngFor="let type of paymentTypes" [value]="type.value">
-            {{type.label}}
-          </ion-select-option>
-        </ion-select>
+        <ion-label position="floating">Nome da Conta</ion-label>
+        <ion-input formControlName="account_name" type="text" (ionChange)="onAccountNameChange()"></ion-input>
       </ion-item>
 
-      <ng-container *ngIf="paymentForm.get('type')?.value !== 'money'">
-        <ion-item>
-          <ion-label position="stacked">Número</ion-label>
-          <ion-input formControlName="number" type="text"></ion-input>
-        </ion-item>
-
-        <ion-item>
-          <ion-label position="stacked">Nome do Titular</ion-label>
-          <ion-input formControlName="holder_name" type="text"></ion-input>
-        </ion-item>
-      </ng-container>
-
-      <ion-item lines="none">
-        <ion-label>Definir como método padrão</ion-label>
-        <ion-toggle formControlName="is_default"></ion-toggle>
+      <ion-item>
+        <ion-label position="floating">Número de Telefone</ion-label>
+        <ion-input formControlName="phone_number" type="tel"></ion-input>
       </ion-item>
-    </ion-list>
-
-    <div class="ion-padding">
-      <ion-button expand="block" type="submit" [disabled]="paymentForm.invalid || isSubmitting">
-        <ion-spinner name="crescent" *ngIf="isSubmitting"></ion-spinner>
-        <span *ngIf="!isSubmitting">Salvar Método de Pagamento</span>
-      </ion-button>
     </div>
+
+    <ion-item>
+      <ion-label>Método Padrão</ion-label>
+      <ion-toggle formControlName="is_default"></ion-toggle>
+    </ion-item>
+
+    <ion-button expand="block" type="submit" [disabled]="paymentForm.invalid || isSubmitting">
+      <ion-spinner *ngIf="isSubmitting"></ion-spinner>
+      <span *ngIf="!isSubmitting">Salvar Método de Pagamento</span>
+    </ion-button>
   </form>
 </ion-content>

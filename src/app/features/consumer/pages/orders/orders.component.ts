@@ -1,154 +1,179 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { IonicModule, ModalController } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { OrderService, OrderHistory } from '../../services/order.service';
+import { OrderTrackingComponent } from '../../components/order-tracking/order-tracking.component';
+import { addIcons } from 'ionicons';
+import {
+  locationOutline,
+  timeOutline,
+  restaurantOutline,
+  bicycleOutline,
+  checkmarkOutline,
+  closeOutline,
+  alertCircleOutline,
+  refreshOutline,
+  calendarOutline,
+  cashOutline,
+  cardOutline,
+  flagOutline,
+  homeOutline,
+  fastFoodOutline
+} from 'ionicons/icons';
 
-interface OrderItem {
-  id: number;
-  name: string;
-  quantity: number;
-  price: number;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  restaurantName: string;
-  status: 'pending' | 'confirmed' | 'preparing' | 'delivering' | 'delivered' | 'cancelled';
-  items: OrderItem[];
-  total: number;
-  date: Date;
-  estimatedDeliveryTime: Date;
-  deliveryAddress: string;
-  paymentMethod: string;
-}
+// Registrar os ícones
+addIcons({
+  'location-outline': locationOutline,
+  'time-outline': timeOutline,
+  'restaurant-outline': restaurantOutline,
+  'bicycle-outline': bicycleOutline,
+  'checkmark-outline': checkmarkOutline,
+  'close-outline': closeOutline,
+  'alert-circle-outline': alertCircleOutline,
+  'refresh-outline': refreshOutline,
+  'calendar-outline': calendarOutline,
+  'cash-outline': cashOutline,
+  'card-outline': cardOutline,
+  'flag-outline': flagOutline,
+  'home-outline': homeOutline,
+  'fast-food-outline': fastFoodOutline
+});
 
 @Component({
   selector: 'app-orders',
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.scss'],
   standalone: true,
-  imports: [
-    CommonModule,
-    IonicModule,
-    FormsModule,
-    RouterModule
-  ]
+  imports: [CommonModule, IonicModule, RouterModule, FormsModule, OrderTrackingComponent]
 })
 export class OrdersComponent implements OnInit {
-  selectedSegment: 'active' | 'history' = 'active';
-  activeOrders: Order[] = [];
-  orderHistory: Order[] = [];
+  orders: OrderHistory[] = [];
+  isLoading = true;
+  error: string | null = null;
 
-  constructor(private router: Router) {}
+  constructor(
+    private orderService: OrderService,
+    private modalCtrl: ModalController
+  ) {}
 
   ngOnInit() {
-    // Carregar pedidos de exemplo
-    this.loadMockOrders();
+    this.loadOrders();
   }
 
-  loadMockOrders() {
-    // Pedidos ativos de exemplo
-    this.activeOrders = [
-      {
-        id: '1',
-        orderNumber: 'OD123456',
-        restaurantName: 'Restaurante Tradicional',
-        status: 'preparing',
-        items: [
-          { id: 1, name: 'Mufete Tradicional', quantity: 1, price: 5000 },
-          { id: 2, name: 'Sumo de Múcua', quantity: 2, price: 1500 }
-        ],
-        total: 8000,
-        date: new Date(),
-        estimatedDeliveryTime: new Date(Date.now() + 30 * 60000), // +30 minutos
-        deliveryAddress: 'Rua Principal, 123 - Centro',
-        paymentMethod: 'Cartão de Crédito'
-      }
-    ];
+  loadOrders() {
+    this.isLoading = true;
+    this.error = null;
 
-    // Histórico de pedidos
-    this.orderHistory = [
-      {
-        id: '2',
-        orderNumber: 'OD123455',
-        restaurantName: 'Pizza Express',
-        status: 'delivered',
-        items: [
-          { id: 3, name: 'Pizza Grande', quantity: 1, price: 4500 }
-        ],
-        total: 4500,
-        date: new Date(Date.now() - 24 * 60 * 60000), // Ontem
-        estimatedDeliveryTime: new Date(Date.now() - 24 * 60 * 60000),
-        deliveryAddress: 'Rua Principal, 123 - Centro',
-        paymentMethod: 'Dinheiro'
+    this.orderService.getOrders().subscribe({
+      next: (orders) => {
+        this.orders = orders;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Erro ao carregar pedidos:', error);
+        this.error = 'Não foi possível carregar seus pedidos. Tente novamente.';
+        this.isLoading = false;
       }
-    ];
-  }
-
-  segmentChanged(event: any) {
-    this.selectedSegment = event.detail.value;
+    });
   }
 
   getStatusColor(status: string): string {
-    const colors = {
-      pending: 'warning',
-      confirmed: 'primary',
-      preparing: 'primary',
-      delivering: 'tertiary',
-      delivered: 'success',
-      cancelled: 'danger'
-    };
-    return colors[status as keyof typeof colors] || 'medium';
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'warning';
+      case 'preparing':
+        return 'primary';
+      case 'delivering':
+        return 'tertiary';
+      case 'delivered':
+        return 'success';
+      case 'cancelled':
+        return 'danger';
+      default:
+        return 'medium';
+    }
   }
 
-  isStepCompleted(order: Order, step: string): boolean {
-    const steps = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered'];
-    const currentIndex = steps.indexOf(order.status);
-    const stepIndex = steps.indexOf(step);
-    return currentIndex >= stepIndex;
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
-  trackOrder(order: Order) {
-    // Navegar para a página de rastreamento
-    this.router.navigate(['/consumer/orders/track', order.id]);
+  formatCurrency(value: string | number): string {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'MZN'
+    }).format(numValue);
   }
 
-  viewOrderDetails(order: Order) {
-    // Navegar para os detalhes do pedido
-    this.router.navigate(['/consumer/orders/details', order.id]);
+  doRefresh(event: any) {
+    this.orderService.getOrders().subscribe({
+      next: (orders) => {
+        this.orders = orders;
+        event.target.complete();
+      },
+      error: (error) => {
+        console.error('Erro ao atualizar pedidos:', error);
+        this.error = 'Não foi possível atualizar seus pedidos. Tente novamente.';
+        event.target.complete();
+      }
+    });
   }
 
-  calculateTotal(items: OrderItem[]): number {
-    return items.reduce((total, item) => total + (item.price * item.quantity), 0);
+  async showTracking(orderId: number) {
+    const modal = await this.modalCtrl.create({
+      component: OrderTrackingComponent,
+      componentProps: {
+        orderId: orderId
+      },
+      breakpoints: [0, 0.5, 0.8, 1],
+      initialBreakpoint: 0.8
+    });
+
+    await modal.present();
   }
 
-  formatOrderStatus(status: string): string {
+  getStatusText(status: string): string {
     const statusMap: { [key: string]: string } = {
-      pending: 'Pendente',
-      confirmed: 'Confirmado',
-      preparing: 'Preparando',
-      delivering: 'A caminho',
-      delivered: 'Entregue',
-      cancelled: 'Cancelado'
+      'pending': 'Pendente',
+      'preparing': 'Em Preparação',
+      'ready': 'Pronto para Entrega',
+      'delivering': 'Em Entrega',
+      'delivered': 'Entregue',
+      'cancelled': 'Cancelado'
     };
     return statusMap[status] || status;
   }
 
-  async cancelOrder(order: Order) {
-    // Implementar lógica de cancelamento
-    console.log('Cancelando pedido:', order.id);
+  canTrackOrder(status: string): boolean {
+    const trackableStatus = ['pending', 'preparing', 'ready', 'delivering'];
+    return trackableStatus.includes(status.toLowerCase());
   }
 
-  async rateOrder(order: Order) {
-    // Navegar para a página de avaliação
-    this.router.navigate(['/consumer/orders/rate', order.id]);
-  }
-
-  async reorder(order: Order) {
-    // Implementar lógica de refazer pedido
-    console.log('Refazendo pedido:', order.id);
+  getStatusIcon(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'time-outline';
+      case 'preparing':
+        return 'restaurant-outline';
+      case 'delivering':
+        return 'bicycle-outline';
+      case 'delivered':
+        return 'checkmark-outline';
+      case 'cancelled':
+        return 'close-outline';
+      case 'ready':
+        return 'flag-outline';
+      default:
+        return 'alert-circle-outline';
+    }
   }
 }
