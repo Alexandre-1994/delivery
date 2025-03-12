@@ -57,12 +57,12 @@
           (click)="filterByCategory('all')">
           <ion-label>Todos</ion-label>
         </ion-chip>
-        <ion-chip 
-          *ngFor="let category of categories"
-          [color]="selectedCategory === category.name ? 'primary' : 'medium'"
-          (click)="filterByCategory(category.name)">
-          <ion-label>{{category.name}}</ion-label>
-        </ion-chip>
+          <ion-chip 
+            *ngFor="let category of categories"
+            [color]="selectedCategory === category.name ? 'primary' : 'medium'"
+            (click)="filterByCategory(category.name)">
+            <ion-label>{{category.name}}</ion-label>
+          </ion-chip>
       </div>
     </div>
 
@@ -89,18 +89,24 @@
     </div>
 
     <!-- Pratos Populares -->
-    <div class="top-dishes-section" *ngIf="topDishes && topDishes.length > 0">
+    <div class="dishes-section" *ngIf="filteredDishes && filteredDishes.length > 0">
       <h2 class="section-title">Pratos Populares</h2>
-      
-      <!-- Usando swiper em vez de ion-slides (depreciado) -->
-      <swiper-container [slidesPerView]="2.5" [spaceBetween]="10" [freeMode]="true" class="dishes-slides">
-        <swiper-slide *ngFor="let dish of topDishes">
+      <swiper-container [config]="swiperConfig" class="dishes-slider">
+        <swiper-slide *ngFor="let dish of filteredDishes">
           <ion-card class="dish-card" (click)="goToDish(dish)">
-            <img [src]="getDishImageUrl(dish.photo)" [alt]="dish.name">
-            <div class="dish-info">
-              <h3>{{dish.name}}</h3>
-              <p class="dish-price">{{dish.price | currency:'AOA':'symbol':'1.0-0'}}</p>
-            </div>
+            <img [src]="getDishImageUrl(dish.image)" [alt]="dish.name">
+            <ion-card-content>
+              <ion-card-title>{{dish.name}}</ion-card-title>
+              <p class="dish-description">{{dish.description | slice:0:60}}...</p>
+              <div class="dish-price-info">
+                <span class="price" [class.discounted]="dish.discount">
+                  {{dish.price | currency:'AOA':'symbol':'1.0-0'}}
+                </span>
+                <span class="discount-price" *ngIf="dish.discount">
+                  {{(dish.price - (dish.price * dish.discount/100)) | currency:'AOA':'symbol':'1.0-0'}}
+                </span>
+              </div>
+            </ion-card-content>
           </ion-card>
         </swiper-slide>
       </swiper-container>
@@ -130,6 +136,33 @@
       </div>
     </div>
 
+    <!-- Lista de Pratos -->
+    <div class="dishes-section">
+      <h2 class="section-title">Todos os Pratos</h2>
+      <swiper-container [config]="swiperConfig" class="dishes-slider">
+        <swiper-slide *ngFor="let dish of filteredDishes">
+          <ion-card class="dish-card">
+            <img [src]="getDishImageUrl(dish.image)" [alt]="dish.name">
+            <ion-card-content>
+              <ion-card-title>{{dish.name}}</ion-card-title>
+              <p class="dish-description">{{dish.description | slice:0:60}}...</p>
+              <div class="dish-price-info">
+                <span class="price" [class.discounted]="dish.discount">
+                  {{dish.price | currency:'AOA':'symbol':'1.0-0'}}
+                </span>
+                <span class="discount-price" *ngIf="dish.discount">
+                  {{(dish.price - (dish.price * dish.discount/100)) | currency:'AOA':'symbol':'1.0-0'}}
+                </span>
+              </div>
+              <ion-button expand="block" (click)="viewRestaurantDetails(dish.restaurant_id)">
+                Ver Restaurante
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+        </swiper-slide>
+      </swiper-container>
+    </div>
+
     <!-- Mensagem de nenhum resultado -->
     <div class="no-results" *ngIf="filteredRestaurants.length === 0">
       <ion-icon name="search-outline"></ion-icon>
@@ -154,145 +187,3 @@
     </ion-tab-button>
   </ion-tab-bar>
 </ion-content>
-
-<style>
-.loading-container, .error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.loading-container ion-spinner, .error-container ion-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.error-container ion-icon {
-  color: var(--ion-color-danger);
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 16px 16px 8px;
-}
-
-.categories-list {
-  display: flex;
-  overflow-x: auto;
-  padding: 0 16px 16px;
-  scrollbar-width: none; /* Firefox */
-}
-
-.categories-list::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
-}
-
-.categories-list ion-chip {
-  margin-right: 8px;
-}
-
-.restaurant-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-  padding: 0 16px 16px;
-}
-
-@media (min-width: 768px) {
-  .restaurant-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  }
-}
-
-ion-card {
-  margin: 0;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-ion-card img {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-}
-
-.dishes-slides {
-  padding: 8px 16px 16px;
-  height: 180px;
-}
-
-.dish-card {
-  width: 140px;
-  margin: 0;
-}
-
-.dish-card img {
-  height: 100px;
-}
-
-.dish-info {
-  padding: 8px;
-}
-
-.dish-info h3 {
-  font-size: 14px;
-  margin: 0 0 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dish-price {
-  font-weight: bold;
-  color: var(--ion-color-primary);
-  margin: 0;
-}
-
-.location-title {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.cuisine-type {
-  color: var(--ion-color-medium);
-  font-size: 12px;
-  margin: 4px 0 8px;
-}
-
-.restaurant-info {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--ion-color-medium);
-}
-
-.no-results {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-  color: var(--ion-color-medium);
-}
-
-.no-results ion-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.no-results h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-
-.no-results p {
-  margin: 0;
-  font-size: 14px;
-}
-</style>

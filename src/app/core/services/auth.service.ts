@@ -34,6 +34,8 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private tokenSubject = new BehaviorSubject<string | null>(null);
   private readonly TOKEN_EXPIRATION_DAYS = 3;
+  private authenticated: boolean = false;
+  private returnUrl: string = '';
   
   constructor(
     private http: HttpClient,
@@ -55,6 +57,7 @@ export class AuthService {
         if (authData.expiresAt > now) {
           this.tokenSubject.next(authData.token);
           this.currentUserSubject.next(authData.user);
+          this.authenticated = true;
         } else {
           // Se expirou, limpar dados
           this.clearAuthData();
@@ -77,6 +80,7 @@ export class AuthService {
     localStorage.setItem('auth_data', JSON.stringify(authData));
     this.tokenSubject.next(token);
     this.currentUserSubject.next(user);
+    this.authenticated = true;
   }
 
   // Método para limpar dados de autenticação
@@ -84,6 +88,8 @@ export class AuthService {
     localStorage.removeItem('auth_data');
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
+    this.authenticated = false;
+    this.returnUrl = '';
   }
   
   // Método para tratar erros de HTTP de forma consistente
@@ -218,15 +224,7 @@ export class AuthService {
   }
   
   get isAuthenticated(): boolean {
-    const authDataStr = localStorage.getItem('auth_data');
-    if (!authDataStr) return false;
-
-    try {
-      const authData: AuthData = JSON.parse(authDataStr);
-      return authData.expiresAt > new Date().getTime();
-    } catch {
-      return false;
-    }
+    return this.authenticated;
   }
   
   getAuthHeaders() {
@@ -240,14 +238,16 @@ export class AuthService {
 
   // Métodos auxiliares para URL de retorno
   private getReturnUrl(): string | null {
-    return localStorage.getItem('returnUrl');
+    return this.returnUrl || localStorage.getItem('returnUrl');
   }
 
   private clearReturnUrl(): void {
     localStorage.removeItem('returnUrl');
+    this.returnUrl = '';
   }
 
   setReturnUrl(url: string): void {
+    this.returnUrl = url;
     localStorage.setItem('returnUrl', url);
   }
 
