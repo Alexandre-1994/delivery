@@ -109,9 +109,9 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     private authService: AuthService
   ) {
     // Check authentication
-    if (!this.authService.isAuthenticated) {
-      this.router.navigate(['/auth/login']);
-    }
+    // if (!this.authService.isAuthenticated) {
+    //   this.router.navigate(['/auth/login']);
+    // }
   }
 
   ngOnInit() {

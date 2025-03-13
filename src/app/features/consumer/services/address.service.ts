@@ -6,6 +6,8 @@ import { environment } from 'src/environments/environment';
 import { AuthService } from 'src/app/core/services/auth.service';
 
 export interface Address {
+  latitude: any;
+  longitude: any;
   id: number;
   customer_id: number;
   address_name: string;

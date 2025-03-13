@@ -89,7 +89,7 @@
             <ion-label>
               <h2>{{ item.name }}</h2>
               <p>{{ item.description }}</p>
-              <ion-text color="primary" class="price">{{ item.price | currency:'AOA' }}</ion-text>
+              <ion-text color="primary" class="price">{{ item.price | currency:'MZN' }}</ion-text>
             </ion-label>
             <div class="item-actions">
               <ion-button fill="clear" (click)="openItemDetails(item)" class="details-btn">
@@ -128,7 +128,7 @@
           
           <div class="item-price">
             <h3>Preço</h3>
-            <p>{{ selectedItem.price | currency:'AOA' }}</p>
+            <p>{{ selectedItem.price | currency:'A' }}</p>
           </div>
           
           <div class="quantity-selector">
@@ -146,7 +146,7 @@
           
           <div class="total-price">
             <h3>Total</h3>
-            <p>{{ selectedItem.price * itemQuantity | currency:'AOA' }}</p>
+            <p>{{ selectedItem.price * itemQuantity | currency:'MZN' }}</p>
           </div>
         </div>
       </div>

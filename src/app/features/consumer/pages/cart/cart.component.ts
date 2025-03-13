@@ -9,6 +9,27 @@ import { Subscription } from 'rxjs';
 import { OrderService } from '../../services/order.service';
 import { environment } from 'src/environments/environment';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { addIcons } from 'ionicons';
+import {
+  addCircleOutline,
+  removeCircleOutline,
+  trashOutline,
+  createOutline,
+  ticketOutline,
+  alertCircleOutline,
+  cartOutline
+} from 'ionicons/icons';
+
+// Registrar os ícones
+addIcons({
+  'add-circle-outline': addCircleOutline,
+  'remove-circle-outline': removeCircleOutline,
+  'trash-outline': trashOutline,
+  'create-outline': createOutline,
+  'ticket-outline': ticketOutline,
+  'alert-circle-outline': alertCircleOutline,
+  'cart-outline': cartOutline
+});
 
 @Component({
   selector: 'app-cart',
@@ -57,8 +78,8 @@ export class CartComponent implements OnInit, OnDestroy {
         this.restaurant = {
           id: items[0].restaurantId,
           name: items[0].restaurantName,
-          deliveryFee: 1500, // Valor fixo ou buscar da API
-          minOrder: 3000 // Valor fixo ou buscar da API
+          deliveryFee: 0, // Valor fixo ou buscar da API
+          minOrder: 0 // Valor fixo ou buscar da API
         };
       } else {
         this.restaurant = null;

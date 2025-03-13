@@ -20,7 +20,7 @@ import { AuthService } from '../../../../core/services/auth.service';
     <ion-content class="ion-padding">
       <div class="login-header ion-text-center">
         <img src="assets/logo.png" alt="Logo" class="logo">
-        <h1>Bem-vindo ao Delivery</h1>
+        <h1>Bem-vindo ao FoodExpress</h1>
         <p>Faça login para continuar</p>
       </div>
 
