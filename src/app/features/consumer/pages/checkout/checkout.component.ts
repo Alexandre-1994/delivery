@@ -20,9 +20,13 @@ import {
   walletOutline,
   arrowBackOutline,
   closeOutline,
-  checkmarkOutline
+  checkmarkOutline,
+  qrCodeOutline
 } from 'ionicons/icons';
 import { AuthService } from 'src/app/core/services/auth.service';
+// import { GeolocationService } from '../../services/geolocation.service'; // Import the geolocation service
+
+import { TrackingService } from 'src/app/services/tracking.service'; // Import the tracking service
 
 // Registrar os ícones
 addIcons({
@@ -34,7 +38,8 @@ addIcons({
   'wallet-outline': walletOutline,
   'arrow-back-outline': arrowBackOutline,
   'close-outline': closeOutline,
-  'checkmark-outline': checkmarkOutline
+  'checkmark-outline': checkmarkOutline,
+  'qr-code-outline': qrCodeOutline
 });
 
 @Component({
@@ -63,7 +68,7 @@ export class CheckoutComponent implements OnInit {
   isPaymentsLoading = false;
 
   // Order summary
-  deliveryFee: number = 0;
+  baseDeliveryFee: number = 0;
   discount: number = 0;
 
   constructor(
@@ -75,7 +80,9 @@ export class CheckoutComponent implements OnInit {
     private modalCtrl: ModalController,
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
-    private authService: AuthService
+    private authService: AuthService,
+
+    private trackingService: TrackingService // Inject the tracking service
   ) {}
 
   async ngOnInit() {
@@ -94,7 +101,7 @@ export class CheckoutComponent implements OnInit {
         this.restaurant = {
           id: items[0].restaurantId,
           name: items[0].restaurantName,
-          deliveryFee: 1500 // Valor fixo ou buscar da API
+          deliveryFee: 0 // Valor fixo ou buscar da API
         };
       } else {
         // Se não tiver itens no carrinho, voltar para a lista de restaurantes
@@ -308,8 +315,29 @@ export class CheckoutComponent implements OnInit {
       total + (item.price * item.quantity), 0);
   }
 
+  get deliveryFee(): number {
+    if (!this.restaurant || !this.selectedAddressId) {
+      return 0;
+    }
+
+    const restaurantLocation = this.trackingService.getRestaurantLocation(this.restaurant.id);
+    const customerAddress = this.addresses.find(addr => addr.id === this.selectedAddressId);
+    if (!customerAddress) {
+      return 0;
+    }
+
+    const customerLocation = {
+      lat: customerAddress.latitude,
+      lng: customerAddress.longitude
+    };
+
+    // const distance = this.geolocationService.calculateDistance(restaurantLocation, customerLocation);
+    // return this.geolocationService.calculateDeliveryFee(distance);
+    return 0; // Temporary return until geolocation service is implemented
+  }
+
   get total(): number {
-    return this.subtotal + (this.restaurant?.deliveryFee || 0);
+    return this.subtotal + this.deliveryFee;
   }
   
   // Navegação
@@ -357,14 +385,16 @@ export class CheckoutComponent implements OnInit {
     });
     toast.present();
   }
-  
+
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('pt-MZ', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(value / 100); // Convertendo centavos para reais
+      currency: 'MZN',
+      // minimumFractionDigits: 2,
+      // maximumFractionDigits: 2
+    }).format(value);
   }
-  
+
   getPaymentMethodIcon(type: string): string {
     switch (type.toLowerCase()) {
       case 'credit_card':

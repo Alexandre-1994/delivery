@@ -56,6 +56,9 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   cartItems: number = 0;
   selectedCategory: string = 'all';
   userName: string = ''; // Add userName property
+  // Add dishes property
+  dishes: any[] = [];
+  filteredDishes: any[] = []; // Add this property
 
   // Dados da API
   restaurants: Restaurant[] = [];
@@ -76,6 +79,32 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     freeMode: true
   };
 
+  swiperConfig = {
+    slidesPerView: 2.5,
+    spaceBetween: 16,
+    freeMode: true,
+    navigation: true,
+    pagination: { clickable: true },
+    breakpoints: {
+      320: {
+        slidesPerView: 1.5,
+        spaceBetween: 10
+      },
+      480: {
+        slidesPerView: 2.5,
+        spaceBetween: 16
+      },
+      768: {
+        slidesPerView: 3.5,
+        spaceBetween: 16
+      },
+      1024: {
+        slidesPerView: 4.5,
+        spaceBetween: 16
+      }
+    }
+  };
+
   constructor(
     private restaurantService: RestaurantService,
     private loadingCtrl: LoadingController,
@@ -83,15 +112,16 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     private authService: AuthService
   ) {
     // Check authentication
-    if (!this.authService.isAuthenticated) {
-      this.router.navigate(['/auth/login']);
-    }
+    // if (!this.authService.isAuthenticated) {
+    //   this.router.navigate(['/auth/login']);
+    // }
   }
 
   ngOnInit() {
     this.loadHomeData();
     this.userName = this.authService.getUserName(); // Get the logged-in user's name
     this.checkCartItems();
+    this.filteredDishes = this.dishes; // Initialize filtered dishes
   }
 
   ngOnDestroy() {
@@ -115,7 +145,14 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
           this.restaurants = data.restaurants || [];
           this.categories = data.categories || [];
           this.topDishes = data.topDishes || [];
+          this.dishes = data.dishes || [];
+
+          // Initialize all filtered arrays with full data
           this.filteredRestaurants = [...this.restaurants];
+          this.filteredDishes = [...this.dishes];
+
+          // Set default category
+          this.selectedCategory = 'all';
           this.isLoading = false;
         },
         error: (err) => {
@@ -144,15 +181,29 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     this.selectedCategory = category;
 
     if (category === 'all') {
+      // Show all items when 'all' is selected
+      this.filteredDishes = [...this.dishes];
       this.filteredRestaurants = [...this.restaurants];
       return;
     }
 
-    // Aqui você precisará adaptar para filtrar conforme a estrutura real da sua API
-    this.filteredRestaurants = this.restaurants.filter(restaurant => {
-      // Se estiver filtrando por cidade
-      return restaurant.city?.toLowerCase() === category.toLowerCase();
-    });
+    const selectedCategory = this.categories.find(c => c.name === category);
+    if (selectedCategory) {
+      // Filter dishes by category
+      this.filteredDishes = this.dishes.filter(dish =>
+        dish.category_id === selectedCategory.id
+      );
+
+      // Filter restaurants by checking if they have dishes in the selected category
+      this.filteredRestaurants = this.restaurants.filter(restaurant => {
+        const restaurantDishes = this.dishes.filter(dish =>
+          dish.restaurant_id === restaurant.id
+        );
+        return restaurantDishes.some(dish =>
+          dish.category_id === selectedCategory.id
+        );
+      });
+    }
   }
 
   // Método para obter cidades únicas dos restaurantes (usado no template)
@@ -227,6 +278,14 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     } catch (error) {
       await loading.dismiss();
       console.error('Erro ao fazer logout:', error);
+    }
+  }
+
+  // Add or update viewRestaurantDetails method
+  viewRestaurantDetails(restaurantId: number) {
+    const restaurant = this.restaurants.find(r => r.id === restaurantId);
+    if (restaurant) {
+      this.router.navigate(['/consumer/restaurant', restaurantId]);
     }
   }
 }

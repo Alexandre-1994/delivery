@@ -48,7 +48,7 @@ export class DeliveryHistoryComponent  implements OnInit {
         restaurantName: 'Restaurante Tradicional',
         customerAddress: 'Avenida Central, 456',
         status: 'completed',
-        earnings: 1500,
+        earnings: 0,
         distance: 3.5,
         deliveryTime: 25
       },

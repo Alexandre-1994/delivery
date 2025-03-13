@@ -19,8 +19,8 @@ import { AuthService } from '../../../../core/services/auth.service';
 
     <ion-content class="ion-padding">
       <div class="login-header ion-text-center">
-        <img src="assets/logo.png" alt="Logo" class="logo">
-        <h1>Bem-vindo ao Delivery</h1>
+        <img src="/assets/logo.png" alt="Logo" class="logo">
+        <h1>Bem-vindo ao FoodExpress</h1>
         <p>Faça login para continuar</p>
       </div>
 
@@ -130,12 +130,12 @@ export class LoginComponent {
   async onSubmit() {
     if (this.loginForm.valid && !this.isLoading) {
       this.isLoading = true;
-      
+
       this.authService.login(this.loginForm.value).subscribe({
         next: async (user) => {
           const toast = await this.toastCtrl.create({
-            message: user.is_driver === 1 ? 
-              'Bem-vindo! Você está logado como entregador.' : 
+            message: user.is_driver === 1 ?
+              'Bem-vindo! Você está logado como entregador.' :
               'Bem-vindo! Você está logado como cliente.',
             duration: 3000,
             position: 'bottom',

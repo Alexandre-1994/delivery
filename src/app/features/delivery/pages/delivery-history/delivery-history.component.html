@@ -32,7 +32,7 @@
         <div class="main-earning">
           <h2>Ganhos Totais</h2>
           <ion-text color="primary">
-            <h1>{{getTotalEarnings() | currency:'AOA'}}</h1>
+            <h1>{{getTotalEarnings() | currency:'MZN'}}</h1>
           </ion-text>
         </div>
         <div class="stats">
@@ -68,7 +68,7 @@
             <h2>{{delivery.restaurantName}}</h2>
             <p>{{delivery.customerAddress}}</p>
             <ion-text color="medium">
-              <p>{{delivery.date | date:'HH:mm'}} • {{delivery.earnings | currency:'AOA'}}</p>
+              <p>{{delivery.date | date:'HH:mm'}} • {{delivery.earnings | currency:'MZN'}}</p>
             </ion-text>
           </ion-label>
           <ion-badge slot="end" [color]="delivery.status === 'completed' ? 'success' : 'danger'">

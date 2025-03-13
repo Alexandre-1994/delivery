@@ -146,7 +146,7 @@ export class AvailableOrdersComponent implements OnInit {
   formatCurrency(value: number): string {
     return value.toLocaleString('pt-AO', {
       style: 'currency',
-      currency: 'AOA',
+      currency: 'MZN',
     });
   }
 }
