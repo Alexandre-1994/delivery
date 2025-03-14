@@ -13,7 +13,7 @@ interface MenuItem {
   name: string;
   description: string;
   price: number;
-  photo: string;
+  image: string;
   category_id: number;
   category_name?: string;
   quantity?: number;
@@ -40,7 +40,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
   cartItems: number = 0;
   isLoading: boolean = true;
   errorMessage: string = '';
-  
+
   // Controle do modal de detalhes
   selectedItem: MenuItem | null = null;
   itemQuantity: number = 1;
@@ -100,7 +100,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
     try {
       const data = await this.restaurantService.getRestaurantDetails(id).toPromise();
       this.restaurant = data;
-      
+
       // Verificar se temos menu_items ou dishes na resposta
       if (data.menu_items && Array.isArray(data.menu_items)) {
         this.menuItems = data.menu_items.map((item: any) => ({...item, quantity: 1}));
@@ -110,7 +110,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
         this.menuItems = data.dishes.map((item: any) => ({...item, quantity: 1}));
         this.organizeMenuByCategories();
       }
-      
+
     } catch (error) {
       console.error('Erro ao carregar detalhes do restaurante:', error);
       this.errorMessage = 'Não foi possível carregar os detalhes deste restaurante';
@@ -126,7 +126,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
 
     // Criar um mapa de categorias
     const categoriesMap = new Map<number, MenuCategory>();
-    
+
     // Adicionar categoria "Todos"
     categoriesMap.set(0, {
       id: 0,
@@ -144,7 +144,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
           items: []
         });
       }
-      
+
       // Adicionar o item tanto na categoria específica quanto em "Todos"
       categoriesMap.get(item.category_id)?.items.push(item);
       categoriesMap.get(0)?.items.push(item);
@@ -166,8 +166,8 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
     if (this.selectedCategory === 'all') {
       return this.menuItems;
     }
-    
-    return this.menuItems.filter(item => 
+
+    return this.menuItems.filter(item =>
       item.category_id.toString() === this.selectedCategory
     );
   }
@@ -212,11 +212,11 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
   async addToCart(item: MenuItem) {
     await this.addItemToCart(item, 1);
   }
-  
+
   // Método comum para adicionar ao carrinho
   async addItemToCart(item: MenuItem, quantity: number) {
     // Verificar se já existe um restaurante diferente no carrinho
-    if (this.currentRestaurantId !== null && 
+    if (this.currentRestaurantId !== null &&
         this.currentRestaurantId !== this.restaurant.id) {
       // Perguntar se o usuário quer limpar o carrinho
       const alert = await this.alertCtrl.create({
@@ -242,7 +242,7 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       this.addToCartConfirmed(item, quantity);
     }
   }
-  
+
   // Método final para adicionar ao carrinho após verificações
   private addToCartConfirmed(item: MenuItem, quantity: number) {
     const cartItem: CartItem = {
@@ -250,14 +250,14 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       name: item.name,
       price: item.price,
       quantity: quantity,
-      photo: item.photo,
+      image: item.image,
       restaurantId: this.restaurant.id,
       restaurantName: this.restaurant.name,
       notes: ''
     };
-    
+
     this.cartService.addItem(cartItem);
-    
+
     this.toastCtrl.create({
       message: `${quantity}x ${item.name} adicionado ao carrinho`,
       duration: 2000,
@@ -268,12 +268,12 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
   // Método auxiliar para obter URL completa da imagem
   getImageUrl(photoName: string | null): string {
     if (!photoName) return 'assets/placeholder-food.jpg';
-    return `http://127.0.0.1:8000/storage/restaurants/${photoName}`;
+    return `http://127.0.0.1:8000/get-image/restaurant/${photoName}`;
   }
 
-  getDishImageUrl(photoName: string | null): string {
-    if (!photoName) return 'assets/placeholder-food.jpg';
-    return `http://127.0.0.1:8000/storage/dishes/${photoName}`;
+  getDishImageUrl(image: string | null): string {
+    if (!image) return 'assets/placeholder-food.jpg';
+    return `http://127.0.0.1:8000/get-image/dishes/${image}`;
   }
 
   goToCart() {

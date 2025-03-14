@@ -6,13 +6,13 @@
         <h1>Bem-vindo de volta</h1>
         <p>Entre para continuar</p>
       </div>
-  
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
         <ion-item>
           <ion-label position="floating">Email</ion-label>
-          <ion-input 
-            type="email" 
-            formControlName="email" 
+          <ion-input
+            type="email"
+            formControlName="email"
             required
             inputmode="email"
             autocomplete="email">
@@ -22,12 +22,12 @@
           <span *ngIf="loginForm.get('email')?.hasError('required')">Email é obrigatório</span>
           <span *ngIf="loginForm.get('email')?.hasError('email')">Email inválido</span>
         </div>
-  
+
         <ion-item>
           <ion-label position="floating">Senha</ion-label>
-          <ion-input 
-            type="password" 
-            formControlName="password" 
+          <ion-input
+            type="password"
+            formControlName="password"
             required
             autocomplete="current-password">
           </ion-input>
@@ -36,19 +36,19 @@
           <span *ngIf="loginForm.get('password')?.hasError('required')">Senha é obrigatória</span>
           <span *ngIf="loginForm.get('password')?.hasError('minlength')">Senha deve ter pelo menos 6 caracteres</span>
         </div>
-  
+
         <!-- <div class="forgot-password">
           <a (click)="forgotPassword()">Esqueceu a senha?</a>
         </div> -->
-  
-        <ion-button 
-          expand="block" 
-          type="submit" 
+
+        <ion-button
+          expand="block"
+          type="submit"
           [disabled]="loginForm.invalid || isSubmitting"
           class="login-button">
           Entrar
         </ion-button>
-  
+
         <div class="register-link">
           <p>Não tem uma conta? <a (click)="goToRegister()">Cadastre-se</a></p>
         </div>

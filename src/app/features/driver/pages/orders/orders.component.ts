@@ -106,8 +106,8 @@ import { Browser } from '@capacitor/browser';
                     <ion-icon name="call-outline"></ion-icon>
                     {{ delivery.restaurant.phone }}
                   </p>
-                  <ion-button *ngIf="delivery.restaurant.lat && delivery.restaurant.lng" 
-                            fill="clear" size="small" 
+                  <ion-button *ngIf="delivery.restaurant.lat && delivery.restaurant.lng"
+                            fill="clear" size="small"
                             (click)="openMaps(delivery.restaurant.lat, delivery.restaurant.lng)">
                     <ion-icon name="navigate-outline" slot="start"></ion-icon>
                     Navegar até Restaurante
@@ -130,8 +130,8 @@ import { Browser } from '@capacitor/browser';
                     <ion-icon name="call-outline"></ion-icon>
                     {{ delivery.customer.phone }}
                   </p>
-                  <ion-button *ngIf="delivery.customer.lat && delivery.customer.lng" 
-                            fill="clear" size="small" 
+                  <ion-button *ngIf="delivery.customer.lat && delivery.customer.lng"
+                            fill="clear" size="small"
                             (click)="openMaps(delivery.customer.lat, delivery.customer.lng)">
                     <ion-icon name="navigate-outline" slot="start"></ion-icon>
                     Navegar até Cliente
@@ -150,10 +150,10 @@ import { Browser } from '@capacitor/browser';
                 <ion-card-content>
                   <p>{{ delivery.item.dish_name }} ({{ delivery.item.quantity }}x)</p>
                   <p>{{ formatCurrency(delivery.item.price) }}</p>
-                  
+
                   <!-- Botões de Ação Principal -->
                   <div class="action-buttons">
-                    <ion-button *ngIf="delivery.tracking.status === 'awaiting-collection'" 
+                    <ion-button *ngIf="delivery.tracking.status === 'awaiting-collection'"
                               expand="block"
                               color="warning"
                               (click)="confirmCollectOrder(delivery)">
@@ -161,7 +161,7 @@ import { Browser } from '@capacitor/browser';
                       Confirmar Coleta no Restaurante
                     </ion-button>
 
-                    <ion-button *ngIf="delivery.tracking.status === 'in-transit'" 
+                    <ion-button *ngIf="delivery.tracking.status === 'in-transit'"
                               expand="block"
                               color="success"
                               (click)="confirmCompleteDelivery(delivery)">
@@ -170,7 +170,7 @@ import { Browser } from '@capacitor/browser';
                     </ion-button>
 
                     <!-- Botão de Navegação -->
-                    <ion-button *ngIf="delivery.tracking.status === 'in-transit' && delivery.customer.lat && delivery.customer.lng" 
+                    <ion-button *ngIf="delivery.tracking.status === 'in-transit' && delivery.customer.lat && delivery.customer.lng"
                               expand="block"
                               color="secondary"
                               (click)="openMaps(delivery.customer.lat, delivery.customer.lng)">
@@ -206,8 +206,8 @@ import { Browser } from '@capacitor/browser';
               </p>
               <p>
                 <ion-icon name="location-outline"></ion-icon>
-                {{ delivery.order_item.restaurant.street }}, 
-                {{ delivery.order_item.restaurant.neighborhood }}, 
+                {{ delivery.order_item.restaurant.street }},
+                {{ delivery.order_item.restaurant.neighborhood }},
                 {{ delivery.order_item.restaurant.city }}
               </p>
               <p>
@@ -405,7 +405,7 @@ export class OrdersComponent implements OnInit {
         },
         {
           text: 'Confirmar',
-          handler: () => this.collectOrder(delivery.tracking.id)
+          handler: () => this.collectOrder(delivery.item.id)
         }
       ]
     });
@@ -536,4 +536,4 @@ export class OrdersComponent implements OnInit {
       this.showToast('Erro ao abrir navegação. Tente novamente.', 'danger');
     }
   }
-} 
+}
