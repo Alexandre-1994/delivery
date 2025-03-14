@@ -8,9 +8,23 @@ import { RouterModule } from '@angular/router';
   template: `
     <ion-tabs>
       <ion-tab-bar slot="bottom">
+        <ion-tab-button tab="restaurants">
+          <ion-icon name="restaurant-outline"></ion-icon>
+          <ion-label>Restaurantes</ion-label>
+        </ion-tab-button>
+
         <ion-tab-button tab="orders">
-          <ion-icon name="bicycle-outline"></ion-icon>
+          <ion-icon name="receipt-outline"></ion-icon>
           <ion-label>Pedidos</ion-label>
+        </ion-tab-button>
+
+        <ion-tab-button tab="cart">
+          <ion-icon name="cart-outline"></ion-icon>
+          <ion-label>Carrinho</ion-label>
+        </ion-tab-button>
+        <ion-tab-button tab="deliveries">
+          <ion-icon name="bicycle-outline"></ion-icon>
+          <ion-label>Entregas</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="profile">
@@ -21,6 +35,6 @@ import { RouterModule } from '@angular/router';
     </ion-tabs>
   `,
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterModule]
+  imports: [CommonModule, IonicModule, RouterModule],
 })
-export class DriverTabsComponent {} 
+export class DriverTabsComponent {}

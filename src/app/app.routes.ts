@@ -97,7 +97,27 @@ export const routes: Routes = [
     loadComponent: () => import('./features/driver/pages/tabs/tabs.component').then(m => m.DriverTabsComponent),
     children: [
       {
+        path: 'restaurants',
+        loadComponent: () => import('./features/consumer/pages/restaurants/restaurants.component').then(m => m.RestaurantsComponent)
+      },
+      {
+        path: 'restaurant/:id',
+        loadComponent: () => import('./features/consumer/pages/restaurant-detail/restaurant-detail.component').then(m => m.RestaurantDetailComponent)
+      },
+      {
         path: 'orders',
+        loadComponent: () => import('./features/consumer/pages/orders/orders.component').then(m => m.OrdersComponent)
+      },
+      {
+        path: 'cart',
+        loadComponent: () => import('./features/consumer/pages/cart/cart.component').then(m => m.CartComponent)
+      },
+      {
+        path: 'checkout',
+        loadComponent: () => import('./features/consumer/pages/checkout/checkout.component').then(m => m.CheckoutComponent)
+      },
+      {
+        path: 'deliveries',
         loadComponent: () => import('./features/driver/pages/orders/orders.component').then(m => m.OrdersComponent)
       },
       {

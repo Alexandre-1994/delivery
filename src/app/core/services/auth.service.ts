@@ -36,7 +36,7 @@ export class AuthService {
   private readonly TOKEN_EXPIRATION_DAYS = 3;
   private authenticated: boolean = false;
   private returnUrl: string = '';
-  
+
   constructor(
     private http: HttpClient,
     private router: Router
@@ -47,12 +47,12 @@ export class AuthService {
   // Carregar dados de autenticação do localStorage
   private loadStoredAuth(): void {
     const authDataStr = localStorage.getItem('auth_data');
-    
+
     if (authDataStr) {
       try {
         const authData: AuthData = JSON.parse(authDataStr);
         const now = new Date().getTime();
-        
+
         // Verificar se o token ainda não expirou
         if (authData.expiresAt > now) {
           this.tokenSubject.next(authData.token);
@@ -76,7 +76,7 @@ export class AuthService {
       expiresAt,
       user
     };
-    
+
     localStorage.setItem('auth_data', JSON.stringify(authData));
     this.tokenSubject.next(token);
     this.currentUserSubject.next(user);
@@ -91,12 +91,12 @@ export class AuthService {
     this.authenticated = false;
     this.returnUrl = '';
   }
-  
+
   // Método para tratar erros de HTTP de forma consistente
   private handleHttpError(error: HttpErrorResponse, defaultMessage: string): Observable<never> {
     console.error('Erro na requisição:', error);
     let errorMessage = defaultMessage;
-    
+
     if (error.error) {
       if (typeof error.error === 'string') {
         errorMessage = error.error;
@@ -106,10 +106,10 @@ export class AuthService {
         errorMessage = error.error.error;
       }
     }
-    
+
     return throwError(() => new Error(errorMessage));
   }
-  
+
   login(credentials: { email: string, password: string }): Observable<User> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ export class AuthService {
               this.clearReturnUrl();
             } else {
               if (response.user.is_driver === 1) {
-                this.router.navigate(['/driver/orders']);
+                this.router.navigate(['/driver/deliveries']);
               } else {
                 this.router.navigate(['/consumer/restaurants']);
               }
@@ -140,7 +140,7 @@ export class AuthService {
         catchError((error: HttpErrorResponse) => this.handleHttpError(error, 'Erro ao fazer login'))
       );
   }
-  
+
   register(userData: { name: string, email: string, password: string, phone?: string }): Observable<any> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
@@ -152,7 +152,7 @@ export class AuthService {
         catchError((error: HttpErrorResponse) => this.handleHttpError(error, 'Erro ao criar conta'))
       );
   }
-  
+
   logout(): void {
     const token = this.tokenSubject.value;
     if (token) {
@@ -160,32 +160,32 @@ export class AuthService {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
       });
-      
+
       // Tentar fazer logout no servidor
       this.http.post(`${this.apiUrl}/customer/logout`, {}, { headers })
         .subscribe({
           error: (error) => console.error('Erro ao fazer logout no servidor:', error)
         });
     }
-    
+
     // Limpar dados locais
     this.clearAuthData();
-    
+
     // Redirecionar para login
     this.router.navigate(['/auth/login']);
   }
-  
+
   validateToken(): Observable<boolean> {
     const token = this.tokenSubject.value;
     if (!token) {
       return of(false);
     }
-    
+
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json'
     });
-    
+
     // Se não houver um endpoint específico para validação de token,
     // você pode usar uma rota protegida que requer autenticação
     return this.http.post<any>(`${this.apiUrl}/customer/validate-token`, {}, { headers })
@@ -201,16 +201,16 @@ export class AuthService {
         })
       );
   }
-  
+
   getCurrentUser(): Observable<User | null> {
     return this.currentUserSubject.asObservable();
   }
-  
+
   getUserName(): string {
     const user = this.currentUserSubject.value;
     return user ? user.name : '';
   }
-  
+
   getToken(): string | null {
     const authDataStr = localStorage.getItem('auth_data');
     if (!authDataStr) return null;
@@ -222,11 +222,11 @@ export class AuthService {
       return null;
     }
   }
-  
+
   get isAuthenticated(): boolean {
     return this.authenticated;
   }
-  
+
   getAuthHeaders() {
     const token = this.tokenSubject.value;
     return {
