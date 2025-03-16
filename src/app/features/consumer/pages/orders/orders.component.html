@@ -1,8 +1,9 @@
 <!-- src/app/features/consumer/pages/orders/orders.component.html -->
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/consumer/home"></ion-back-button>
+      <!-- <ion-back-button defaultHref="/restaurants"></ion-back-button> -->
+      <ion-back-button defaultHref="/consumer/restaurants" color="dark"></ion-back-button>
     </ion-buttons>
     <ion-title>Meus Pedidos</ion-title>
   </ion-toolbar>
@@ -37,11 +38,11 @@
     <ion-item-group *ngFor="let order of orders">
       <!-- Item clicável para rastreamento -->
       <ion-item button detail="false" (click)="showTracking(order.tracking_id)" [disabled]="!canTrackOrder(order.status)">
-        <ion-icon [name]="getStatusIcon(order.status)" 
+        <ion-icon [name]="getStatusIcon(order.status)"
                  [color]="getStatusColor(order.status)"
                  slot="start"
                  size="large"></ion-icon>
-        
+
         <ion-label>
           <div class="order-header">
             <h2>Pedido #{{ order.tracking_number }}</h2>
@@ -81,9 +82,9 @@
         </ion-label>
 
         <!-- Indicador de rastreamento disponível -->
-        <ion-icon 
+        <ion-icon
           *ngIf="canTrackOrder(order.status)"
-          name="chevron-forward-outline" 
+          name="chevron-forward-outline"
           slot="end"
           color="primary">
         </ion-icon>

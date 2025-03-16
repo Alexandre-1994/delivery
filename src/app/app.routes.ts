@@ -135,6 +135,6 @@ export const routes: Routes = [
   // Redirects
   {
     path: '**',
-    redirectTo: 'auth/login'
+    redirectTo: '/restaurants'
   }
 ];
