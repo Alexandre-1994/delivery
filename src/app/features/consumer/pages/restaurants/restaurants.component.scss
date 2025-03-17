@@ -306,78 +306,132 @@ ion-searchbar {
 /* Sliders de pratos */
 .dishes-section {
   margin: 24px 0;
-  
+  padding: 0 16px;
 
   .dishes-slider {
-    padding: 16px;
-    height: 320px;
+    height: 380px;
+    width: 100%;
     
     swiper-slide {
       height: auto;
+      width: auto;
+      
+      .dish-card {
+        width: 280px;
+        height: 360px;
+        margin: 0;
+        background: #fff;
+        border-radius: var(--border-radius-card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        
+        &:hover {
+          transform: translateY(-5px);
+        }
+        
+        img {
+          width: 100%;
+          height: 160px;
+          object-fit: cover;
+        }
+        
+        ion-card-content {
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          height: calc(100% - 160px);
+          
+          ion-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--ion-color-dark);
+          }
+          
+          .restaurant-name {
+            font-size: 14px;
+            color: var(--ion-color-medium);
+            margin-bottom: 8px;
+          }
+          
+          .dish-description {
+            font-size: 14px;
+            color: var(--ion-color-medium);
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+          }
+          
+          .dish-price-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            
+            .price {
+              font-size: 18px;
+              font-weight: 600;
+              color: var(--ion-color-dark);
+              
+              &.discounted {
+                text-decoration: line-through;
+                color: var(--ion-color-medium);
+                font-size: 14px;
+              }
+            }
+            
+            .discount-price {
+              font-size: 18px;
+              font-weight: 700;
+              color: var(--ion-color-success);
+            }
+          }
+          
+          ion-button {
+            margin: auto 0 0;
+            --padding-top: 12px;
+            --padding-bottom: 12px;
+            
+            &[fill="clear"] {
+              margin-top: 8px;
+              --color: var(--ion-color-medium);
+            }
+          }
+        }
+      }
     }
+  }
+
+  // Responsive adjustments
+  @media (max-width: 576px) {
+    padding: 0 8px;
     
-    .dish-card {
-      margin: 0;
-      height: 100%;
-      width: 220px;
-      border-radius: var(--border-radius-card);
-      box-shadow: var(--shadow-card);
+    .dishes-slider swiper-slide .dish-card {
+      width: 240px;
+      height: 340px;
       
       img {
-        width: 100%;
         height: 140px;
-        object-fit: cover;
       }
       
       ion-card-content {
         padding: 12px;
+        height: calc(100% - 140px);
         
         ion-card-title {
           font-size: 16px;
-          font-weight: 600;
-          margin-bottom: 8px;
-          display: -webkit-box;
-          -webkit-line-clamp: 1;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        
-        .dish-description {
-          font-size: 12px;
-          color: var(--ion-color-medium);
-          margin-bottom: 12px;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          line-height: 1.4;
         }
         
         .dish-price-info {
-          display: flex;
-          align-items: center;
-          gap: 8px;
           margin-bottom: 12px;
           
-          .price {
-            font-weight: 600;
-            
-            &.discounted {
-              text-decoration: line-through;
-              color: var(--ion-color-medium);
-              font-size: 0.9em;
-            }
+          .price, .discount-price {
+            font-size: 16px;
           }
-          
-          .discount-price {
-            color: var(--ion-color-success);
-            font-weight: 700;
-          }
-        }
-        
-        ion-button {
-          margin: 0;
-          --border-radius: 8px;
         }
       }
     }
@@ -390,7 +444,7 @@ ion-searchbar {
   margin: 24px 0;
   
   .dishes-slider {
-    padding: 16px;
+    // padding: 16px;
     height: 360px;
     display: ruby;
     
@@ -399,8 +453,8 @@ ion-searchbar {
       
       .dish-card {
         margin: 3.2px;
-        height: 100%;
-        width: 100%;
+        height: 50%;
+        width: 50%;
         transform-origin: center center;
         transition: all 0.3s ease;
         

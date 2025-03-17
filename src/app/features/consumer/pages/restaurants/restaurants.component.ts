@@ -20,6 +20,7 @@ import {
   person
 } from 'ionicons/icons';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { CartService, CartItem } from '../../services/cart.service';
 
 // Registrar os ícones
 addIcons({
@@ -109,7 +110,8 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     private restaurantService: RestaurantService,
     private loadingCtrl: LoadingController,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private cartService: CartService  // Add CartService
   ) {
     // Check authentication
     // if (!this.authService.isAuthenticated) {
@@ -286,6 +288,48 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     const restaurant = this.restaurants.find(r => r.id === restaurantId);
     if (restaurant) {
       this.router.navigate(['/consumer/restaurant', restaurantId]);
+    }
+  }
+
+  async addToCart(dish: any) {
+    const cartItem: CartItem = {
+      id: dish.id,
+      name: dish.name,
+      price: dish.discount ? 
+        dish.price - (dish.price * dish.discount/100) : 
+        dish.price,
+      quantity: 1,
+      image: dish.image,
+      restaurantId: dish.restaurant_id,
+      restaurantName: this.restaurants.find(r => r.id === dish.restaurant_id)?.name || '',
+      notes: ''
+    };
+
+    const success = this.cartService.addItem(cartItem);
+    
+    if (success) {
+      // Update cart items count
+      this.cartService.getItemCount().subscribe(count => {
+        this.cartItems = count;
+      });
+      
+      // Show success message
+      const toast = document.createElement('ion-toast');
+      toast.message = 'Item adicionado ao carrinho';
+      toast.duration = 2000;
+      toast.position = 'bottom';
+      toast.color = 'success';
+      document.body.appendChild(toast);
+      await toast.present();
+    } else {
+      // Show error message
+      const toast = document.createElement('ion-toast');
+      toast.message = 'Não é possível adicionar itens de diferentes restaurantes';
+      toast.duration = 2000;
+      toast.position = 'bottom';
+      toast.color = 'danger';
+      document.body.appendChild(toast);
+      await toast.present();
     }
   }
 }
