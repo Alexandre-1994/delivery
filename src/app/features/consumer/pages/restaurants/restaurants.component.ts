@@ -81,10 +81,6 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   // Estado do componente
   isLoading: boolean = true;
   errorMessage: string = '';
-  private currentRestaurantId: number | null = null;
-
-  // Removing the null initialization which was causing the error
-  // restaurant: any = null;
 
   swiperConfig = {
     slidesPerView: 2.5,
@@ -127,6 +123,11 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     this.userName = this.authService.getUserName();
     this.checkCartItems();
     this.filteredDishes = this.dishes;
+
+    // Atualizar o contador de itens do carrinho quando houver mudanças
+    this.cartService.getItemCount().subscribe(count => {
+      this.cartItems = count;
+    });
   }
 
   ngOnDestroy() {
@@ -135,8 +136,9 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   }
 
   async checkCartItems() {
-    // Replace with your actual cart service implementation
-    this.cartItems = 0;
+    this.cartService.getItemCount().subscribe(count => {
+      this.cartItems = count;
+    });
   }
 
   loadHomeData() {
@@ -221,12 +223,12 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     )];
   }
 
-  // Adicionar ao carrinho direto da lista
+  // Add to cart directly from the list
   async addToCart(item: MenuItem) {
     await this.addItemToCart(item, 1);
   }
 
-  // Método comum para adicionar ao carrinho
+  // Common method to add to cart
   async addItemToCart(item: MenuItem, quantity: number) {
     // Find the restaurant for this item
     const restaurant = this.restaurants.find(r => r.id === item.restaurant_id);
@@ -242,36 +244,11 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Verificar se já existe um restaurante diferente no carrinho
-    if (this.currentRestaurantId !== null &&
-        this.currentRestaurantId !== restaurant.id) {
-      // Perguntar se o usuário quer limpar o carrinho
-      const alert = await this.alertCtrl.create({
-        header: 'Limpar carrinho?',
-        message: 'Seu carrinho contém itens de outro restaurante. Deseja limpar o carrinho e adicionar este item?',
-        buttons: [
-          {
-            text: 'Cancelar',
-            role: 'cancel'
-          },
-          {
-            text: 'Limpar e Adicionar',
-            handler: () => {
-              this.cartService.clearCart();
-              this.addToCartConfirmed(item, quantity, restaurant);
-            }
-          }
-        ]
-      });
-      await alert.present();
-    } else {
-      // Adicionar diretamente se não há conflito
-      this.addToCartConfirmed(item, quantity, restaurant);
-    }
+    // Adicionar diretamente ao carrinho sem verificar conflitos
+    this.addToCartConfirmed(item, quantity, restaurant);
   }
 
-  // Método final para adicionar ao carrinho após verificações
-  // Added restaurant parameter to this method
+  // Method to add to cart after checks
   private addToCartConfirmed(item: MenuItem, quantity: number, restaurant: Restaurant) {
     const cartItem: CartItem = {
       id: item.id,
@@ -304,7 +281,17 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   }
 
   goToCart() {
-    this.router.navigate(['/consumer/cart']);
+    this.cartService.hasItems().subscribe(hasItems => {
+      if (hasItems) {
+        this.router.navigate(['/consumer/cart']);
+      } else {
+        this.toastCtrl.create({
+          message: 'Seu carrinho está vazio. Adicione alguns itens primeiro.',
+          duration: 2000,
+          position: 'bottom'
+        }).then(toast => toast.present());
+      }
+    });
   }
 
   goToProfile() {
@@ -358,7 +345,6 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Add or update viewRestaurantDetails method
   viewRestaurantDetails(restaurantId: number) {
     const restaurant = this.restaurants.find(r => r.id === restaurantId);
     if (restaurant) {

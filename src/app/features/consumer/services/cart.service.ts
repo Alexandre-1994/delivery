@@ -1,6 +1,6 @@
-
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface CartItem {
   id: number;
@@ -13,106 +13,246 @@ export interface CartItem {
   notes?: string;
 }
 
+export interface RestaurantGroup {
+  restaurantId: number;
+  restaurantName: string;
+  items: CartItem[];
+  deliveryFee: number;
+  minOrder: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
-  private items: CartItem[] = [];
-  private cartItemsSubject = new BehaviorSubject<CartItem[]>([]);
-  private restaurantIdSubject = new BehaviorSubject<number | null>(null);
+  private restaurantGroups: RestaurantGroup[] = [];
+  private cartGroupsSubject = new BehaviorSubject<RestaurantGroup[]>([]);
 
   constructor() {
-    // Carregar carrinho do localStorage se existir
+    // Load cart from localStorage if it exists
+    this.loadFromStorage();
+  }
+
+  private loadFromStorage(): void {
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
-      this.items = JSON.parse(savedCart);
-      this.cartItemsSubject.next(this.items);
+      try {
+        // Try to parse as new format (restaurant groups)
+        this.restaurantGroups = JSON.parse(savedCart);
+        this.cartGroupsSubject.next(this.restaurantGroups);
+      } catch (e) {
+        try {
+          // If that fails, try loading as old format (flat items array)
+          const oldItems: CartItem[] = JSON.parse(savedCart);
 
-      // Se temos itens, definir o restaurante atual
-      if (this.items.length > 0) {
-        this.restaurantIdSubject.next(this.items[0].restaurantId);
+          // Convert old format to new format
+          if (oldItems.length > 0) {
+            // Group by restaurantId
+            const groupedItems: { [key: number]: CartItem[] } = {};
+
+            oldItems.forEach(item => {
+              if (!groupedItems[item.restaurantId]) {
+                groupedItems[item.restaurantId] = [];
+              }
+              groupedItems[item.restaurantId].push(item);
+            });
+
+            // Create restaurant groups
+            this.restaurantGroups = Object.keys(groupedItems).map(restaurantIdStr => {
+              const restaurantId = Number(restaurantIdStr);
+              const items = groupedItems[restaurantId];
+              return {
+                restaurantId,
+                restaurantName: items[0].restaurantName,
+                items,
+                deliveryFee: 0, // Default value
+                minOrder: 0     // Default value
+              };
+            });
+
+            this.cartGroupsSubject.next(this.restaurantGroups);
+            this.saveToStorage();
+          }
+        } catch (innerError) {
+          console.error('Error parsing saved cart:', innerError);
+          this.restaurantGroups = [];
+          this.cartGroupsSubject.next([]);
+        }
       }
     }
   }
 
-  getItems(): Observable<CartItem[]> {
-    return this.cartItemsSubject.asObservable();
+  private saveToStorage(): void {
+    localStorage.setItem('cart', JSON.stringify(this.restaurantGroups));
   }
 
-  getCurrentRestaurantId(): Observable<number | null> {
-    return this.restaurantIdSubject.asObservable();
+  // Get all restaurant groups
+  getRestaurantGroups(): Observable<RestaurantGroup[]> {
+    return this.cartGroupsSubject.asObservable();
   }
 
-  getItemCount(): Observable<number> {
-    return new Observable<number>(observer => {
-      this.getItems().subscribe(items => {
-        const count = items.reduce((total, item) => total + item.quantity, 0);
-        observer.next(count);
+// Get all items flattened (for backward compatibility)
+getItems(): Observable<CartItem[]> {
+  return this.cartGroupsSubject.pipe(
+    map(groups => {
+      let allItems: CartItem[] = [];
+      groups.forEach(group => {
+        allItems = allItems.concat(group.items);
       });
-    });
+      return allItems;
+    })
+  );
+}
+
+  // Get current restaurant IDs
+  getRestaurantIds(): Observable<number[]> {
+    return this.cartGroupsSubject.pipe(
+      map(groups => groups.map(group => group.restaurantId))
+    );
   }
 
+  // Check if cart has any items
+  hasItems(): Observable<boolean> {
+    return this.cartGroupsSubject.pipe(
+      map(groups => groups.length > 0 && groups.some(group => group.items.length > 0))
+    );
+  }
+
+  // Get total item count
+  getItemCount(): Observable<number> {
+    return this.cartGroupsSubject.pipe(
+      map(groups =>
+        groups.reduce((total, group) =>
+          total + group.items.reduce((groupTotal, item) => groupTotal + item.quantity, 0), 0)
+      )
+    );
+  }
+
+  // Get total price
   getTotalPrice(): number {
-    return this.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return this.restaurantGroups.reduce((total, group) =>
+      total + group.items.reduce((groupTotal, item) =>
+        groupTotal + (item.price * item.quantity), 0), 0);
   }
 
+  // Add item to cart
   addItem(item: CartItem): boolean {
-    // Verificar se já temos itens de outro restaurante
-    if (this.items.length > 0 && this.items[0].restaurantId !== item.restaurantId) {
-      // Não permitir misturar itens de restaurantes diferentes
-      return false;
+    // Find if restaurant group exists
+    let group = this.restaurantGroups.find(g => g.restaurantId === item.restaurantId);
+
+    if (!group) {
+      // Create new restaurant group
+      group = {
+        restaurantId: item.restaurantId,
+        restaurantName: item.restaurantName,
+        items: [],
+        deliveryFee: 0, // Default value, update from API if needed
+        minOrder: 0     // Default value, update from API if needed
+      };
+      this.restaurantGroups.push(group);
     }
 
-    const existingItemIndex = this.items.findIndex(i => i.id === item.id);
+    // Find if item already exists in group
+    const existingItemIndex = group.items.findIndex(i => i.id === item.id);
 
     if (existingItemIndex > -1) {
-      // Atualizar a quantidade se o item já existe
-      this.items[existingItemIndex].quantity += item.quantity;
+      // Update quantity if item exists
+      group.items[existingItemIndex].quantity += item.quantity;
     } else {
-      // Adicionar novo item
-      this.items.push(item);
+      // Add new item to group
+      group.items.push(item);
     }
 
-    // Salvar restaurante atual
-    this.restaurantIdSubject.next(item.restaurantId);
-
-    // Atualizar o subject e localStorage
+    // Update the subject and localStorage
     this.updateCart();
     return true;
   }
 
-  updateItemQuantity(itemId: number, quantity: number): void {
-    const index = this.items.findIndex(item => item.id === itemId);
-    if (index !== -1) {
-      if (quantity <= 0) {
-        // Remover o item se a quantidade for 0 ou menos
-        this.removeItem(itemId);
-      } else {
-        this.items[index].quantity = quantity;
-        this.updateCart();
+  // Update item quantity
+  updateItemQuantity(restaurantId: number, itemId: number, quantity: number): void {
+    const groupIndex = this.restaurantGroups.findIndex(g => g.restaurantId === restaurantId);
+
+    if (groupIndex !== -1) {
+      const itemIndex = this.restaurantGroups[groupIndex].items.findIndex(item => item.id === itemId);
+
+      if (itemIndex !== -1) {
+        if (quantity <= 0) {
+          // Remove item if quantity is 0 or less
+          this.removeItem(restaurantId, itemId);
+        } else {
+          this.restaurantGroups[groupIndex].items[itemIndex].quantity = quantity;
+          this.updateCart();
+        }
       }
     }
   }
 
-  removeItem(itemId: number): void {
-    this.items = this.items.filter(item => item.id !== itemId);
-
-    // Se removermos o último item, resetar o restaurante atual
-    if (this.items.length === 0) {
-      this.restaurantIdSubject.next(null);
+  // For backward compatibility
+  updateItemQuantity_old(itemId: number, quantity: number): void {
+    for (const group of this.restaurantGroups) {
+      const itemIndex = group.items.findIndex(item => item.id === itemId);
+      if (itemIndex !== -1) {
+        if (quantity <= 0) {
+          this.removeItem(group.restaurantId, itemId);
+        } else {
+          group.items[itemIndex].quantity = quantity;
+          this.updateCart();
+        }
+        return;
+      }
     }
+  }
 
+  // Remove item
+  removeItem(restaurantId: number, itemId: number): void {
+    const groupIndex = this.restaurantGroups.findIndex(g => g.restaurantId === restaurantId);
+
+    if (groupIndex !== -1) {
+      this.restaurantGroups[groupIndex].items =
+        this.restaurantGroups[groupIndex].items.filter(item => item.id !== itemId);
+
+      // If group has no items, remove it
+      if (this.restaurantGroups[groupIndex].items.length === 0) {
+        this.restaurantGroups.splice(groupIndex, 1);
+      }
+
+      this.updateCart();
+    }
+  }
+
+  // For backward compatibility
+  removeItem_old(itemId: number): void {
+    for (const group of this.restaurantGroups) {
+      const itemIndex = group.items.findIndex(item => item.id === itemId);
+      if (itemIndex !== -1) {
+        this.removeItem(group.restaurantId, itemId);
+        return;
+      }
+    }
+  }
+
+  // Clear items from a specific restaurant
+  clearRestaurantItems(restaurantId: number): void {
+    this.restaurantGroups = this.restaurantGroups.filter(g => g.restaurantId !== restaurantId);
     this.updateCart();
   }
 
+  // Clear entire cart
   clearCart(): void {
-    this.items = [];
-    this.restaurantIdSubject.next(null);
+    this.restaurantGroups = [];
     this.updateCart();
   }
 
+  // Check if cart has multiple restaurants
+  hasMultipleRestaurants(): Observable<boolean> {
+    return this.cartGroupsSubject.pipe(
+      map(groups => groups.length > 1)
+    );
+  }
+
+  // Update cart data
   private updateCart(): void {
-    this.cartItemsSubject.next([...this.items]);
-    localStorage.setItem('cart', JSON.stringify(this.items));
+    this.cartGroupsSubject.next([...this.restaurantGroups]);
+    this.saveToStorage();
   }
 }
