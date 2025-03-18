@@ -92,7 +92,7 @@
     <div class="dishes-section" *ngIf="filteredDishes && filteredDishes.length > 0">
       <h2 class="section-title">Pratos Populares</h2>
       <div class="dishes-grid">
-        <ion-card class="dish-card" *ngFor="let dish of filteredDishes" (click)="viewRestaurantDetails(dish.restaurant_id)">
+        <ion-card class="dish-card" *ngFor="let dish of filteredDishes" >
           <img [src]="getDishImageUrl(dish.image)" [alt]="dish.name">
           <ion-card-content>
             <ion-card-title>{{dish.name}}</ion-card-title>
@@ -106,6 +106,10 @@
                 {{(dish.price - (dish.price * dish.discount/100)) | currency:'MZN':'symbol':'1.0-0'}}
               </span>
             </div>
+            <ion-button fill="clear" (click)="addToCart(dish)" class="add-btn">
+              <ion-icon name="add-circle"></ion-icon>
+              <ion-label>Adicionar</ion-label>
+            </ion-button>
           </ion-card-content>
         </ion-card>
       </div>
@@ -153,8 +157,12 @@
                 {{(dish.price - (dish.price * dish.discount/100)) | currency:'MZN':'symbol':'1.0-0'}}
               </span>
             </div>
+            <ion-button fill="clear" (click)="addToCart(dish)" class="add-btn">
+              <ion-icon name="add-circle"></ion-icon>
+              <ion-label>Adicionar</ion-label>
+            </ion-button>
             <ion-button expand="block" (click)="viewRestaurantDetails(dish.restaurant_id)">
-              Detalhes
+              Ver Restaurante
             </ion-button>
           </ion-card-content>
         </ion-card>

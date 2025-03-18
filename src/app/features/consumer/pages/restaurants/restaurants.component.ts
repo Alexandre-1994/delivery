@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, LoadingController } from '@ionic/angular';
+import { IonicModule, LoadingController, ToastController, AlertController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -10,6 +10,7 @@ import { RestaurantService, Restaurant, Category, Dish } from '../../services/re
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { addIcons } from 'ionicons';
+import { CartService, CartItem } from '../../services/cart.service';
 import {
   locationOutline,
   cartOutline,
@@ -32,8 +33,17 @@ addIcons({
   'person': person
 });
 
-// Registrar o componente Swiper
-// register();
+interface MenuItem {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category_id: number;
+  category_name?: string;
+  quantity?: number;
+  restaurant_id?: number;
+}
 
 @Component({
   selector: 'app-restaurants',
@@ -55,10 +65,10 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   searchTerm: string = '';
   cartItems: number = 0;
   selectedCategory: string = 'all';
-  userName: string = ''; // Add userName property
+  userName: string = '';
   // Add dishes property
   dishes: any[] = [];
-  filteredDishes: any[] = []; // Add this property
+  filteredDishes: any[] = [];
 
   // Dados da API
   restaurants: Restaurant[] = [];
@@ -71,13 +81,10 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   // Estado do componente
   isLoading: boolean = true;
   errorMessage: string = '';
+  private currentRestaurantId: number | null = null;
 
-  // Configuração do slider (agora será definida no template com swiper-container)
-  slideOpts = {
-    slidesPerView: 2.5,
-    spaceBetween: 10,
-    freeMode: true
-  };
+  // Removing the null initialization which was causing the error
+  // restaurant: any = null;
 
   swiperConfig = {
     slidesPerView: 2.5,
@@ -109,19 +116,17 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     private restaurantService: RestaurantService,
     private loadingCtrl: LoadingController,
     private router: Router,
-    private authService: AuthService
-  ) {
-    // Check authentication
-    // if (!this.authService.isAuthenticated) {
-    //   this.router.navigate(['/auth/login']);
-    // }
-  }
+    private authService: AuthService,
+    private alertCtrl: AlertController,
+    private cartService: CartService,
+    private toastCtrl: ToastController
+  ) {}
 
   ngOnInit() {
     this.loadHomeData();
-    this.userName = this.authService.getUserName(); // Get the logged-in user's name
+    this.userName = this.authService.getUserName();
     this.checkCartItems();
-    this.filteredDishes = this.dishes; // Initialize filtered dishes
+    this.filteredDishes = this.dishes;
   }
 
   ngOnDestroy() {
@@ -214,6 +219,78 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
         .map(r => r.city)
         .filter(city => city !== undefined && city !== null && city !== '')
     )];
+  }
+
+  // Adicionar ao carrinho direto da lista
+  async addToCart(item: MenuItem) {
+    await this.addItemToCart(item, 1);
+  }
+
+  // Método comum para adicionar ao carrinho
+  async addItemToCart(item: MenuItem, quantity: number) {
+    // Find the restaurant for this item
+    const restaurant = this.restaurants.find(r => r.id === item.restaurant_id);
+
+    if (!restaurant) {
+      // Show an error toast if the restaurant can't be found
+      this.toastCtrl.create({
+        message: 'Erro: não foi possível identificar o restaurante deste item',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      }).then(toast => toast.present());
+      return;
+    }
+
+    // Verificar se já existe um restaurante diferente no carrinho
+    if (this.currentRestaurantId !== null &&
+        this.currentRestaurantId !== restaurant.id) {
+      // Perguntar se o usuário quer limpar o carrinho
+      const alert = await this.alertCtrl.create({
+        header: 'Limpar carrinho?',
+        message: 'Seu carrinho contém itens de outro restaurante. Deseja limpar o carrinho e adicionar este item?',
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Limpar e Adicionar',
+            handler: () => {
+              this.cartService.clearCart();
+              this.addToCartConfirmed(item, quantity, restaurant);
+            }
+          }
+        ]
+      });
+      await alert.present();
+    } else {
+      // Adicionar diretamente se não há conflito
+      this.addToCartConfirmed(item, quantity, restaurant);
+    }
+  }
+
+  // Método final para adicionar ao carrinho após verificações
+  // Added restaurant parameter to this method
+  private addToCartConfirmed(item: MenuItem, quantity: number, restaurant: Restaurant) {
+    const cartItem: CartItem = {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: quantity,
+      image: item.image,
+      restaurantId: restaurant.id,
+      restaurantName: restaurant.name,
+      notes: ''
+    };
+
+    this.cartService.addItem(cartItem);
+
+    this.toastCtrl.create({
+      message: `${quantity}x ${item.name} adicionado ao carrinho`,
+      duration: 2000,
+      position: 'bottom'
+    }).then(toast => toast.present());
   }
 
   // Métodos de navegação
