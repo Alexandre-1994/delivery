@@ -1,4 +1,3 @@
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, LoadingController, ToastController, AlertController } from '@ionic/angular';
@@ -48,8 +47,6 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
 
   // Subscriptions
   private cartSubscription: Subscription | null = null;
-  private cartRestaurantSubscription: Subscription | null = null;
-  private currentRestaurantId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -67,11 +64,6 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
       this.cartItems = count;
     });
 
-    // Verificar se já temos itens de outro restaurante
-    this.cartRestaurantSubscription = this.cartService.getCurrentRestaurantId().subscribe(restaurantId => {
-      this.currentRestaurantId = restaurantId;
-    });
-
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       await this.loadRestaurantDetails(Number(id));
@@ -84,9 +76,6 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
     // Limpar subscriptions
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
-    }
-    if (this.cartRestaurantSubscription) {
-      this.cartRestaurantSubscription.unsubscribe();
     }
   }
 
@@ -215,35 +204,11 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
 
   // Método comum para adicionar ao carrinho
   async addItemToCart(item: MenuItem, quantity: number) {
-    // Verificar se já existe um restaurante diferente no carrinho
-    if (this.currentRestaurantId !== null &&
-        this.currentRestaurantId !== this.restaurant.id) {
-      // Perguntar se o usuário quer limpar o carrinho
-      const alert = await this.alertCtrl.create({
-        header: 'Limpar carrinho?',
-        message: 'Seu carrinho contém itens de outro restaurante. Deseja limpar o carrinho e adicionar este item?',
-        buttons: [
-          {
-            text: 'Cancelar',
-            role: 'cancel'
-          },
-          {
-            text: 'Limpar e Adicionar',
-            handler: () => {
-              this.cartService.clearCart();
-              this.addToCartConfirmed(item, quantity);
-            }
-          }
-        ]
-      });
-      await alert.present();
-    } else {
-      // Adicionar diretamente se não há conflito
-      this.addToCartConfirmed(item, quantity);
-    }
+    // Adicionar diretamente ao carrinho
+    this.addToCartConfirmed(item, quantity);
   }
 
-  // Método final para adicionar ao carrinho após verificações
+  // Método final para adicionar ao carrinho
   private addToCartConfirmed(item: MenuItem, quantity: number) {
     const cartItem: CartItem = {
       id: item.id,
@@ -277,7 +242,17 @@ export class RestaurantDetailComponent implements OnInit, OnDestroy {
   }
 
   goToCart() {
-    this.router.navigate(['/consumer/cart']);
+    this.cartService.hasItems().subscribe(hasItems => {
+      if (hasItems) {
+        this.router.navigate(['/consumer/cart']);
+      } else {
+        this.toastCtrl.create({
+          message: 'Seu carrinho está vazio. Adicione alguns itens primeiro.',
+          duration: 2000,
+          position: 'bottom'
+        }).then(toast => toast.present());
+      }
+    });
   }
 
   goBack() {

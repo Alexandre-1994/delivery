@@ -1,13 +1,11 @@
-// src/app/features/consumer/pages/cart/cart.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, AlertController, ToastController, LoadingController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { CartService, CartItem } from '../../services/cart.service';
+import { CartService, CartItem, RestaurantGroup } from '../../services/cart.service';
 import { Subscription } from 'rxjs';
 import { OrderService } from '../../services/order.service';
-import { environment } from 'src/environments/environment';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { addIcons } from 'ionicons';
 import {
@@ -17,10 +15,11 @@ import {
   createOutline,
   ticketOutline,
   alertCircleOutline,
-  cartOutline
+  cartOutline,
+  restaurantOutline
 } from 'ionicons/icons';
 
-// Registrar os ícones
+// Register icons
 addIcons({
   'add-circle-outline': addCircleOutline,
   'remove-circle-outline': removeCircleOutline,
@@ -28,7 +27,8 @@ addIcons({
   'create-outline': createOutline,
   'ticket-outline': ticketOutline,
   'alert-circle-outline': alertCircleOutline,
-  'cart-outline': cartOutline
+  'cart-outline': cartOutline,
+  'restaurant-outline': restaurantOutline
 });
 
 @Component({
@@ -44,13 +44,7 @@ addIcons({
   ]
 })
 export class CartComponent implements OnInit, OnDestroy {
-  cartItems: CartItem[] = [];
-  restaurant: {
-    id: number;
-    name: string;
-    deliveryFee: number;
-    minOrder: number;
-  } | null = null;
+  restaurantGroups: RestaurantGroup[] = [];
   orderNotes: string = '';
   couponCode: string = '';
   discount: number = 0;
@@ -69,21 +63,8 @@ export class CartComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.cartSubscription = this.cartService.getItems().subscribe(items => {
-      this.cartItems = items;
-
-      // Se tivermos itens, extrair informações do restaurante
-      if (items.length > 0) {
-        // Idealmente, buscar esses valores da API
-        this.restaurant = {
-          id: items[0].restaurantId,
-          name: items[0].restaurantName,
-          deliveryFee: 0, // Valor fixo ou buscar da API
-          minOrder: 0 // Valor fixo ou buscar da API
-        };
-      } else {
-        this.restaurant = null;
-      }
+    this.cartSubscription = this.cartService.getRestaurantGroups().subscribe(groups => {
+      this.restaurantGroups = groups;
     });
   }
 
@@ -93,30 +74,63 @@ export class CartComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Getters para cálculos
-  get subtotal(): number {
-    return this.cartItems.reduce((total, item) =>
-      total + (item.price * item.quantity), 0);
+  // Getters for calculations
+get subtotal(): number {
+  if (!this.restaurantGroups || this.restaurantGroups.length === 0) {
+    return 0;
   }
 
-  get total(): number {
-    return this.subtotal + (this.restaurant?.deliveryFee || 0) - this.discount;
+  return this.restaurantGroups.reduce((total, group) => {
+    if (!group || !group.items || !Array.isArray(group.items)) {
+      return total;
+    }
+    return total + group.items.reduce((groupTotal, item) => {
+      if (!item) return groupTotal;
+      return groupTotal + (item.price * item.quantity);
+    }, 0);
+  }, 0);
+}
+
+get deliveryFeeTotal(): number {
+  if (!this.restaurantGroups || this.restaurantGroups.length === 0) {
+    return 0;
   }
 
-  // Métodos para manipulação de itens
-  increaseQuantity(item: CartItem): void {
-    this.cartService.updateItemQuantity(item.id, item.quantity + 1);
+  return this.restaurantGroups.reduce((total, group) => {
+    if (!group) return total;
+    return total + (group.deliveryFee || 0);
+  }, 0);
+}
+
+calculateRestaurantSubtotal(group: RestaurantGroup): number {
+  if (!group || !group.items || !Array.isArray(group.items)) {
+    return 0;
   }
 
-  decreaseQuantity(item: CartItem): void {
+  return group.items.reduce((total, item) => {
+    if (!item) return total;
+    return total + (item.price * item.quantity);
+  }, 0);
+}
+
+get total(): number {
+  return this.subtotal + this.deliveryFeeTotal - this.discount;
+}
+
+  // Item manipulation methods
+  increaseQuantity(restaurantId: number, item: CartItem): void {
+    this.cartService.updateItemQuantity(restaurantId, item.id, item.quantity + 1);
+  }
+
+  decreaseQuantity(restaurantId: number, item: CartItem): void {
     if (item.quantity > 1) {
-      this.cartService.updateItemQuantity(item.id, item.quantity - 1);
+      this.cartService.updateItemQuantity(restaurantId, item.id, item.quantity - 1);
     } else {
-      this.removeItem(item);
+      this.removeItem(restaurantId, item);
     }
   }
 
-  async removeItem(item: CartItem): Promise<void> {
+  async removeItem(restaurantId: number, item: CartItem): Promise<void> {
     const alert = await this.alertCtrl.create({
       header: 'Remover item',
       message: `Deseja remover ${item.name} do carrinho?`,
@@ -128,9 +142,35 @@ export class CartComponent implements OnInit, OnDestroy {
         {
           text: 'Remover',
           handler: () => {
-            this.cartService.removeItem(item.id);
+            this.cartService.removeItem(restaurantId, item.id);
             this.toastCtrl.create({
               message: 'Item removido do carrinho',
+              duration: 2000,
+              position: 'bottom'
+            }).then(toast => toast.present());
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async clearRestaurantItems(restaurantId: number, restaurantName: string): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Limpar itens',
+      message: `Deseja remover todos os itens de ${restaurantName}?`,
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Limpar',
+          handler: () => {
+            this.cartService.clearRestaurantItems(restaurantId);
+            this.toastCtrl.create({
+              message: `Itens de ${restaurantName} removidos`,
               duration: 2000,
               position: 'bottom'
             }).then(toast => toast.present());
@@ -168,16 +208,11 @@ export class CartComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Método para obter URL da imagem
-  // getItemImageUrl(photo: string): string {
-  //   return `${environment.apiUrl}/storage/${photo}`;
-  // }
   getItemImageUrl(image: string): string {
-    // if (!image) return 'assets/placeholder-food.jpg';
+    if (!image) return 'assets/placeholder-food.jpg';
     return `http://127.0.0.1:8000/get-image/dishes/${image}`;
   }
 
-  // Método para aplicar cupom
   async applyCoupon() {
     if (!this.couponCode) {
       const toast = await this.toastCtrl.create({
@@ -196,8 +231,8 @@ export class CartComponent implements OnInit, OnDestroy {
     await loading.present();
 
     try {
-      // TODO: Implementar validação do cupom com a API
-      // Por enquanto, apenas simular um desconto
+      // TODO: Implement coupon validation with API
+      // For now, just simulate a discount
       this.discount = 500; // 5 reais de desconto
 
       const toast = await this.toastCtrl.create({
@@ -221,18 +256,23 @@ export class CartComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Método para continuar comprando
   continueShopping() {
     this.router.navigate(['/consumer/restaurants']);
   }
 
-  // Método para finalizar pedido
   async checkout() {
-    // Primeiro verificar o pedido mínimo
-    if (!this.isMinOrderMet()) {
+    // Check if any restaurant fails to meet minimum order
+    const failedRestaurants = this.restaurantGroups.filter(group =>
+      !this.isMinOrderMet(group));
+
+    if (failedRestaurants.length > 0) {
+      const message = failedRestaurants.map(group =>
+        `${group.restaurantName}: faltam ${this.formatCurrency(group.minOrder - this.calculateRestaurantSubtotal(group))}`
+      ).join('\n');
+
       const toast = await this.toastCtrl.create({
-        message: `Pedido mínimo é ${this.formatCurrency(this.restaurant?.minOrder || 0)}`,
-        duration: 2000,
+        message: `Pedido mínimo não atingido:\n${message}`,
+        duration: 3000,
         position: 'bottom',
         color: 'warning'
       });
@@ -240,7 +280,7 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Verificar autenticação
+    // Check authentication
     if (!this.authService.isAuthenticated) {
       const alert = await this.alertCtrl.create({
         header: 'Autenticação necessária',
@@ -263,24 +303,48 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Se estiver autenticado, prosseguir para o checkout
-    this.router.navigate(['/consumer/checkout']);
+    // Informar o usuário que serão gerados pedidos separados para cada restaurante
+    if (this.restaurantGroups.length > 1) {
+      const alert = await this.alertCtrl.create({
+        header: 'Múltiplos Restaurantes',
+        message: `Você está fazendo pedidos de ${this.restaurantGroups.length} restaurantes diferentes. Será criado um pedido separado para cada restaurante.`,
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Continuar',
+            handler: () => {
+              // Proceed to checkout
+              this.router.navigate(['/consumer/checkout']);
+            }
+          }
+        ]
+      });
+      await alert.present();
+    } else {
+      // Proceed to checkout with single restaurant
+      this.router.navigate(['/consumer/checkout']);
+    }
   }
 
-  // Validações
-  isMinOrderMet(): boolean {
-    return this.subtotal >= (this.restaurant?.minOrder || 0);
+  isMinOrderMet(group: RestaurantGroup): boolean {
+    return this.calculateRestaurantSubtotal(group) >= (group.minOrder || 0);
   }
 
-  getRemainingForMinOrder(): number {
-    return (this.restaurant?.minOrder || 0) - this.subtotal;
+  getRemainingForMinOrder(group: RestaurantGroup): number {
+    return Math.max(0, (group.minOrder || 0) - this.calculateRestaurantSubtotal(group));
   }
 
-  // Formatadores
   formatCurrency(value: number): string {
     return value.toLocaleString('pt-MZ', {
       style: 'currency',
       currency: 'MZN'
     });
+  }
+
+  get hasItems(): boolean {
+    return this.restaurantGroups.length > 0;
   }
 }

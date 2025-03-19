@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, LoadingController } from '@ionic/angular';
+import { IonicModule, LoadingController, ToastController, AlertController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -10,6 +10,7 @@ import { RestaurantService, Restaurant, Category, Dish } from '../../services/re
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { addIcons } from 'ionicons';
+import { CartService, CartItem } from '../../services/cart.service';
 import {
   locationOutline,
   cartOutline,
@@ -33,8 +34,17 @@ addIcons({
   'person': person
 });
 
-// Registrar o componente Swiper
-// register();
+interface MenuItem {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category_id: number;
+  category_name?: string;
+  quantity?: number;
+  restaurant_id?: number;
+}
 
 @Component({
   selector: 'app-restaurants',
@@ -56,10 +66,10 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   searchTerm: string = '';
   cartItems: number = 0;
   selectedCategory: string = 'all';
-  userName: string = ''; // Add userName property
+  userName: string = '';
   // Add dishes property
   dishes: any[] = [];
-  filteredDishes: any[] = []; // Add this property
+  filteredDishes: any[] = [];
 
   // Dados da API
   restaurants: Restaurant[] = [];
@@ -72,13 +82,6 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   // Estado do componente
   isLoading: boolean = true;
   errorMessage: string = '';
-
-  // Configuração do slider (agora será definida no template com swiper-container)
-  slideOpts = {
-    slidesPerView: 2.5,
-    spaceBetween: 10,
-    freeMode: true
-  };
 
   swiperConfig = {
     slidesPerView: 2.5,
@@ -111,6 +114,7 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     private loadingCtrl: LoadingController,
     private router: Router,
     private authService: AuthService,
+<<<<<<< HEAD
     private cartService: CartService  // Add CartService
   ) {
     // Check authentication
@@ -118,12 +122,23 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     //   this.router.navigate(['/auth/login']);
     // }
   }
+=======
+    private alertCtrl: AlertController,
+    private cartService: CartService,
+    private toastCtrl: ToastController
+  ) {}
+>>>>>>> origin
 
   ngOnInit() {
     this.loadHomeData();
-    this.userName = this.authService.getUserName(); // Get the logged-in user's name
+    this.userName = this.authService.getUserName();
     this.checkCartItems();
-    this.filteredDishes = this.dishes; // Initialize filtered dishes
+    this.filteredDishes = this.dishes;
+
+    // Atualizar o contador de itens do carrinho quando houver mudanças
+    this.cartService.getItemCount().subscribe(count => {
+      this.cartItems = count;
+    });
   }
 
   ngOnDestroy() {
@@ -132,8 +147,9 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   }
 
   async checkCartItems() {
-    // Replace with your actual cart service implementation
-    this.cartItems = 0;
+    this.cartService.getItemCount().subscribe(count => {
+      this.cartItems = count;
+    });
   }
 
   loadHomeData() {
@@ -218,6 +234,53 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     )];
   }
 
+  // Add to cart directly from the list
+  async addToCart(item: MenuItem) {
+    await this.addItemToCart(item, 1);
+  }
+
+  // Common method to add to cart
+  async addItemToCart(item: MenuItem, quantity: number) {
+    // Find the restaurant for this item
+    const restaurant = this.restaurants.find(r => r.id === item.restaurant_id);
+
+    if (!restaurant) {
+      // Show an error toast if the restaurant can't be found
+      this.toastCtrl.create({
+        message: 'Erro: não foi possível identificar o restaurante deste item',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      }).then(toast => toast.present());
+      return;
+    }
+
+    // Adicionar diretamente ao carrinho sem verificar conflitos
+    this.addToCartConfirmed(item, quantity, restaurant);
+  }
+
+  // Method to add to cart after checks
+  private addToCartConfirmed(item: MenuItem, quantity: number, restaurant: Restaurant) {
+    const cartItem: CartItem = {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: quantity,
+      image: item.image,
+      restaurantId: restaurant.id,
+      restaurantName: restaurant.name,
+      notes: ''
+    };
+
+    this.cartService.addItem(cartItem);
+
+    this.toastCtrl.create({
+      message: `${quantity}x ${item.name} adicionado ao carrinho`,
+      duration: 2000,
+      position: 'bottom'
+    }).then(toast => toast.present());
+  }
+
   // Métodos de navegação
   goToRestaurant(restaurant: Restaurant) {
     this.router.navigate(['/consumer/restaurant', restaurant.id]);
@@ -229,7 +292,17 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   }
 
   goToCart() {
-    this.router.navigate(['/consumer/cart']);
+    this.cartService.hasItems().subscribe(hasItems => {
+      if (hasItems) {
+        this.router.navigate(['/consumer/cart']);
+      } else {
+        this.toastCtrl.create({
+          message: 'Seu carrinho está vazio. Adicione alguns itens primeiro.',
+          duration: 2000,
+          position: 'bottom'
+        }).then(toast => toast.present());
+      }
+    });
   }
 
   goToProfile() {
@@ -283,7 +356,6 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Add or update viewRestaurantDetails method
   viewRestaurantDetails(restaurantId: number) {
     const restaurant = this.restaurants.find(r => r.id === restaurantId);
     if (restaurant) {
