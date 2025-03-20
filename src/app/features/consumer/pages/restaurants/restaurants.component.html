@@ -157,7 +157,7 @@
                 {{(dish.price - (dish.price * dish.discount/100)) | currency:'MZN':'symbol':'1.0-0'}}
               </span>
             </div>
-            <ion-button fill="clear" (click)="addToCart(dish)" class="add-btn">
+            <ion-button fill="clear" (click)="addToCart(dish, $event)" class="add-btn">
               <ion-icon name="add-circle"></ion-icon>
               <ion-label>Adicionar</ion-label>
             </ion-button>

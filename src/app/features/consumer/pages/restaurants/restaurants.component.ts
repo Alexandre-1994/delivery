@@ -224,7 +224,10 @@ export class RestaurantsComponent implements OnInit, OnDestroy {
   }
 
   // Add to cart directly from the list
-  async addToCart(item: MenuItem) {
+  async addToCart(item: MenuItem, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
     await this.addItemToCart(item, 1);
   }
 
