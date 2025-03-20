@@ -3,7 +3,7 @@
     <ion-title>Adicionar Método de Pagamento</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="cancel()">
-        <ion-icon name="close"></ion-icon>
+        <ion-icon name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -16,20 +16,71 @@
       <ion-select formControlName="type" (ionChange)="onPaymentTypeChange()">
         <ion-select-option value="mpesa">M-PESA</ion-select-option>
         <ion-select-option value="emola">E-MOLA</ion-select-option>
-        <ion-select-option value="card">Cartão</ion-select-option>
+        <ion-select-option value="bank_card">Cartão</ion-select-option>
       </ion-select>
     </ion-item>
 
     <div formGroupName="details">
-      <ion-item>
-        <ion-label position="floating">Nome da Conta</ion-label>
-        <ion-input formControlName="account_name" type="text" (ionChange)="onAccountNameChange()"></ion-input>
-      </ion-item>
+      <!-- Campos para M-PESA e E-MOLA -->
+      <ng-container *ngIf="selectedType === 'mpesa' || selectedType === 'emola'">
+        <ion-item>
+          <ion-label position="floating">Nome da Conta</ion-label>
+          <ion-input formControlName="account_name" type="text" (ionChange)="onNameChange()"></ion-input>
+        </ion-item>
 
-      <ion-item>
-        <ion-label position="floating">Número de Telefone</ion-label>
-        <ion-input formControlName="phone_number" type="tel"></ion-input>
-      </ion-item>
+        <ion-item>
+          <ion-label position="floating">Número de Telefone</ion-label>
+          <ion-input formControlName="phone_number" type="tel"></ion-input>
+          <ion-note slot="error" *ngIf="paymentForm.get('details.phone_number')?.errors?.['pattern']">
+            Formato de telefone inválido
+          </ion-note>
+        </ion-item>
+      </ng-container>
+
+      <!-- Campos para Cartão -->
+      <ng-container *ngIf="selectedType === 'card' || selectedType === 'bank_card'">
+        <ion-item>
+          <ion-label position="floating">Nome do Titular</ion-label>
+          <ion-input formControlName="holder_name" type="text" (ionChange)="onNameChange()"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Bandeira do Cartão</ion-label>
+          <ion-select formControlName="brand">
+            <ion-select-option *ngFor="let brand of cardBrands" [value]="brand.value">
+              {{ brand.label }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Número do Cartão</ion-label>
+          <ion-input formControlName="card_number" type="tel" maxlength="19" placeholder="XXXX XXXX XXXX XXXX"></ion-input>
+          <ion-note slot="error" *ngIf="paymentForm.get('details.card_number')?.errors?.['pattern']">
+            Número de cartão inválido
+          </ion-note>
+        </ion-item>
+
+        <div class="expiration-container">
+          <ion-item>
+            <ion-label position="floating">Mês de expiração</ion-label>
+            <ion-select formControlName="expiration_month">
+              <ion-select-option *ngFor="let month of months" [value]="month">
+                {{ month }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">Ano de expiração</ion-label>
+            <ion-select formControlName="expiration_year">
+              <ion-select-option *ngFor="let year of years" [value]="year">
+                {{ year }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+      </ng-container>
     </div>
 
     <ion-item>
@@ -37,9 +88,20 @@
       <ion-toggle formControlName="is_default"></ion-toggle>
     </ion-item>
 
-    <ion-button expand="block" type="submit" [disabled]="paymentForm.invalid || isSubmitting">
+    <ion-button expand="block" type="submit" [disabled]="paymentForm.invalid || isSubmitting" class="ion-margin-top">
       <ion-spinner *ngIf="isSubmitting"></ion-spinner>
       <span *ngIf="!isSubmitting">Salvar Método de Pagamento</span>
     </ion-button>
   </form>
 </ion-content>
+
+<style>
+.expiration-container {
+  display: flex;
+  gap: 10px;
+}
+
+.expiration-container ion-item {
+  flex: 1;
+}
+</style>

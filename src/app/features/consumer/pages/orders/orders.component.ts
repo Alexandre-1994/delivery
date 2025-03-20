@@ -85,7 +85,7 @@ export class OrdersComponent implements OnInit {
         return 'warning';
       case 'preparing':
         return 'primary';
-      case 'delivering':
+      case 'in-transit':
         return 'tertiary';
       case 'delivered':
         return 'success';
@@ -146,7 +146,7 @@ export class OrdersComponent implements OnInit {
       'pending': 'Pendente',
       'preparing': 'Em Preparação',
       'ready': 'Pronto para Entrega',
-      'delivering': 'Em Entrega',
+      'in-transit': 'Em Transito',
       'delivered': 'Entregue',
       'cancelled': 'Cancelado'
     };
@@ -154,7 +154,7 @@ export class OrdersComponent implements OnInit {
   }
 
   canTrackOrder(status: string): boolean {
-    const trackableStatus = ['pending', 'preparing', 'ready', 'delivering'];
+    const trackableStatus = ['pending', 'preparing', 'ready', 'in-transit'];
     return trackableStatus.includes(status.toLowerCase());
   }
 
@@ -164,7 +164,7 @@ export class OrdersComponent implements OnInit {
         return 'time-outline';
       case 'preparing':
         return 'restaurant-outline';
-      case 'delivering':
+      case 'in-transit':
         return 'bicycle-outline';
       case 'delivered':
         return 'checkmark-outline';

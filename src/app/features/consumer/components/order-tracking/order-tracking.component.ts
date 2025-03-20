@@ -17,7 +17,7 @@ declare var google: any;
 export class OrderTrackingComponent implements OnInit, OnDestroy {
   @Input() orderId!: number;
   @ViewChild('mapElement') mapElement!: ElementRef;
-  
+
   trackingInfo?: TrackingInfo;
   map?: any;
   driverMarker?: any;
@@ -36,7 +36,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // Carregar informações iniciais
     this.loadTrackingInfo();
-    
+
     // Atualizar a cada 30 segundos
     this.updateSubscription = interval(30000).subscribe(() => {
       this.loadTrackingInfo();
@@ -55,13 +55,13 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       const info = await this.trackingService.getTrackingInfo(this.orderId).toPromise();
       console.log('Informações recebidas:', info);
       this.trackingInfo = info;
-      
+
       if (this.trackingInfo) {
         // Inicializar mapa se ainda não foi inicializado
         if (!this.map) {
           await this.initMap();
         }
-        
+
         this.updateMapMarkers();
         this.calculateDistanceAndTime();
         this.updateRoute();
@@ -195,27 +195,27 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const duration = 1000; // Duração da animação em milissegundos
     const fps = 60; // Frames por segundo
     const frames = duration / (1000 / fps);
-    
+
     const oldLat = marker.getPosition().lat();
     const oldLng = marker.getPosition().lng();
     const latDiff = (newPosition.lat - oldLat) / frames;
     const lngDiff = (newPosition.lng - oldLng) / frames;
-    
+
     let frame = 0;
-    
+
     const animate = () => {
       frame++;
-      
+
       const lat = oldLat + (latDiff * frame);
       const lng = oldLng + (lngDiff * frame);
-      
+
       marker.setPosition({ lat, lng });
-      
+
       if (frame < frames) {
         requestAnimationFrame(animate);
       }
     };
-    
+
     animate();
   }
 
@@ -237,8 +237,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       }
     });
 
-    const origin = this.driverMarker ? 
-      this.driverMarker.getPosition() : 
+    const origin = this.driverMarker ?
+      this.driverMarker.getPosition() :
       new google.maps.LatLng(
         parseFloat(this.trackingInfo.restaurant_info.addressLat),
         parseFloat(this.trackingInfo.restaurant_info.addressLng)
@@ -284,7 +284,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       'pending': 'Pendente',
       'preparing': 'Em Preparação',
       'ready': 'Pronto para Entrega',
-      'delivering': 'Em Entrega',
+      'in-transit': 'Em Transito',
       'delivered': 'Entregue',
       'cancelled': 'Cancelado'
     };
@@ -296,7 +296,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       'pending': 'warning',
       'preparing': 'primary',
       'ready': 'tertiary',
-      'delivering': 'tertiary',
+      'in-transit': 'tertiary',
       'delivered': 'success',
       'cancelled': 'danger'
     };
@@ -305,7 +305,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   getDeliveryAddress(): string {
     if (!this.trackingInfo) return '';
-    
+
     const address = this.trackingInfo.addres_info;
     return `${address.street}, ${address.block}, ${address.neighborhood}, ${address.city}`;
   }
@@ -329,4 +329,4 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   dismiss() {
     this.modalCtrl.dismiss();
   }
-} 
+}

@@ -1,4 +1,3 @@
-// src/app/features/consumer/services/payment.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -15,11 +14,25 @@ interface MpesaDetails {
 }
 
 interface CardDetails {
-  // Adicione os campos necessários para cartão quando implementar
+  id: number;
+  payment_method_id: number;
+  holder_name: string;
+  brand: string;
+  last_four: string;
+  expiration_month: number;
+  expiration_year: number;
+  card_token: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface EmolaDetails {
-  // Adicione os campos necessários para Emola quando implementar
+  id: number;
+  payment_method_id: number;
+  phone_number: string;
+  account_name: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PaymentMethod {
@@ -35,6 +48,26 @@ export interface PaymentMethod {
   card_details: CardDetails | null;
   emola_details: EmolaDetails | null;
   mpesa_details: MpesaDetails | null;
+}
+
+export interface PaymentMethodRequest {
+  type: 'mpesa' | 'card' | 'emola';
+  title: string;
+  is_default: boolean;
+  is_active: boolean;
+  details: {
+    // Mobile Money (M-PESA/E-MOLA)
+    account_name?: string;
+    phone_number?: string;
+
+    // Card
+    holder_name?: string;
+    brand?: string;
+    last_four?: string;
+    expiration_month?: number;
+    expiration_year?: number;
+    card_token?: string;
+  };
 }
 
 @Injectable({
@@ -56,11 +89,11 @@ export class PaymentService {
     return this.http.get<PaymentMethod[]>(`${this.apiUrl}/list`, { headers: this.getHeaders() });
   }
 
-  addPaymentMethod(paymentMethod: Partial<PaymentMethod>): Observable<PaymentMethod> {
+  addPaymentMethod(paymentMethod: PaymentMethodRequest): Observable<PaymentMethod> {
     return this.http.post<PaymentMethod>(`${this.apiUrl}/store`, paymentMethod, { headers: this.getHeaders() });
   }
 
-  updatePaymentMethod(id: number, paymentMethod: Partial<PaymentMethod>): Observable<PaymentMethod> {
+  updatePaymentMethod(id: number, paymentMethod: Partial<PaymentMethodRequest>): Observable<PaymentMethod> {
     return this.http.put<PaymentMethod>(`${this.apiUrl}/update/${id}`, paymentMethod, { headers: this.getHeaders() });
   }
 
