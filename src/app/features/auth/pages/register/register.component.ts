@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ToastController } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -13,9 +13,7 @@ import { AuthService } from '../../../../core/services/auth.service';
         <ion-buttons slot="start">
           <ion-back-button defaultHref="/auth/login"></ion-back-button>
         </ion-buttons>
-        <ion-title>
-          <ion-text color="dark">Criar Conta</ion-text>
-        </ion-title>
+        <ion-title>Criar Conta</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -23,7 +21,7 @@ import { AuthService } from '../../../../core/services/auth.service';
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
         <ion-list>
           <ion-item>
-            <ion-label position="floating">Nome</ion-label>
+            <ion-label position="floating">Nome Completo</ion-label>
             <ion-input type="text" formControlName="name"></ion-input>
           </ion-item>
           <ion-text color="danger" *ngIf="registerForm.get('name')?.touched && registerForm.get('name')?.errors?.['required']">
@@ -39,6 +37,30 @@ import { AuthService } from '../../../../core/services/auth.service';
           </ion-text>
           <ion-text color="danger" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.errors?.['email']">
             <p class="ion-padding-start">Email inválido</p>
+          </ion-text>
+
+          <ion-item>
+            <ion-label position="floating">Telefone</ion-label>
+            <ion-input type="tel" formControlName="phone"></ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="registerForm.get('phone')?.touched && registerForm.get('phone')?.errors?.['required']">
+            <p class="ion-padding-start">Telefone é obrigatório</p>
+          </ion-text>
+
+          <ion-item>
+            <ion-label position="floating">Província</ion-label>
+            <ion-input type="text" formControlName="provincia"></ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="registerForm.get('provincia')?.touched && registerForm.get('provincia')?.errors?.['required']">
+            <p class="ion-padding-start">Província é obrigatória</p>
+          </ion-text>
+
+          <ion-item>
+            <ion-label position="floating">Cidade</ion-label>
+            <ion-input type="text" formControlName="city"></ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="registerForm.get('city')?.touched && registerForm.get('city')?.errors?.['required']">
+            <p class="ion-padding-start">Cidade é obrigatória</p>
           </ion-text>
 
           <ion-item>
@@ -116,11 +138,15 @@ export class RegisterComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastCtrl: ToastController
   ) {
     this.registerForm = this.fb.group({
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required]],
+      provincia: ['', [Validators.required]],
+      city: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       password_confirmation: ['', [Validators.required]]
     }, {
@@ -133,37 +159,45 @@ export class RegisterComponent {
       ? null : { passwordMismatch: true };
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.registerForm.valid && !this.isLoading) {
       this.isLoading = true;
-      
-      this.authService.register(this.registerForm.value).subscribe({
-        next: () => {
-          // Após o registro bem-sucedido, fazer login automaticamente
-          const credentials = {
-            email: this.registerForm.get('email')?.value,
-            password: this.registerForm.get('password')?.value
-          };
-          
-          this.authService.login(credentials).subscribe({
-            next: () => {
-              this.router.navigate(['/consumer/restaurants']);
-            },
-            error: (error) => {
-              console.error('Erro ao fazer login após registro:', error);
-              // Redirecionar para login em caso de erro
-              this.router.navigate(['/auth/login']);
-            }
-          });
-        },
-        error: (error) => {
-          console.error('Erro no registro:', error);
-          this.isLoading = false;
-        },
-        complete: () => {
-          this.isLoading = false;
-        }
-      });
+
+      try {
+        const formData = {
+          name: this.registerForm.value.name,
+          email: this.registerForm.value.email,
+          phone: this.registerForm.value.phone,
+          password: this.registerForm.value.password,
+          provincia: this.registerForm.value.provincia,
+          city: this.registerForm.value.city
+        };
+
+        await this.authService.register(formData).toPromise();
+        
+        const toast = await this.toastCtrl.create({
+          message: 'Conta criada com sucesso! Por favor, faça login.',
+          duration: 3000,
+          position: 'bottom',
+          color: 'success'
+        });
+        await toast.present();
+
+        // Após criar conta, redireciona para login
+        this.router.navigate(['/auth/login']);
+      } catch (error: any) {
+        console.error('Erro no registro:', error);
+        
+        const toast = await this.toastCtrl.create({
+          message: error.message || 'Erro ao criar conta. Tente novamente.',
+          duration: 3000,
+          position: 'bottom',
+          color: 'danger'
+        });
+        await toast.present();
+      } finally {
+        this.isLoading = false;
+      }
     }
   }
-} 
+}

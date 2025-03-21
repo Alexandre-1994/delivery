@@ -26,6 +26,21 @@ interface AuthData {
   user: User;
 }
 
+interface RegisterData {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  provincia: string;
+  city: string;
+}
+
+interface RegisterResponse {
+  token: string;
+  user: User;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -141,16 +156,31 @@ export class AuthService {
       );
   }
 
-  register(userData: { name: string, email: string, password: string, phone?: string }): Observable<any> {
+  register(data: RegisterData): Observable<any> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     });
 
-    return this.http.post<any>(`${this.apiUrl}/customer/create-account`, userData, { headers })
-      .pipe(
-        catchError((error: HttpErrorResponse) => this.handleHttpError(error, 'Erro ao criar conta'))
-      );
+    const payload = {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      password: data.password,
+      provincia: data.provincia,
+      city: data.city
+    };
+
+    return this.http.post(
+      `${this.apiUrl}/customer/profile/store`,
+      payload,
+      { headers }
+    ).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Erro detalhado do registro:', error);
+        return this.handleHttpError(error, error.error?.message || 'Erro ao criar conta');
+      })
+    );
   }
 
   logout(): void {
