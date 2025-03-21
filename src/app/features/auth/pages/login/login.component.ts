@@ -5,6 +5,7 @@ import { IonicModule, ToastController } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -108,7 +109,8 @@ import { AuthService } from '../../../../core/services/auth.service';
   imports: [
     CommonModule,
     IonicModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    RouterModule // Make sure RouterModule is imported
   ]
 })
 export class LoginComponent {
